@@ -118,6 +118,60 @@ check('四人牌桌', boardHtml, [
 checkOrder('三行牌 3→2→1', boardHtml, '3 级', '1 级');
 check('右栏是独立容器', boardHtml, ['board-rail']);
 
+// 花砖物语
+const { AzulBoard } = require('../src/games/azul/AzulBoard.tsx');
+
+function azulSeat(index) {
+  return {
+    seat: index,
+    score: 0,
+    lines: [1, 2, 3, 4, 5].map((capacity) => ({ color: null, count: 0, capacity })),
+    wall: Array.from({ length: 5 }, () =>
+      Array.from({ length: 5 }, () => ({ color: 'blue', filled: false })),
+    ),
+    floor: [],
+    hasMarker: false,
+    current: index === 0,
+    first: index === 0,
+  };
+}
+
+const azulView = {
+  playerCount: 4,
+  currentSeat: 0,
+  round: 1,
+  phase: 'TAKING',
+  bagCount: 80,
+  factories: [1, 2, 3, 4, 5].map((index) => ({
+    index,
+    tiles: ['blue', 'blue', 'yellow', 'red'],
+  })),
+  center: { tiles: ['white', 'black'], hasMarker: true },
+  seats: [azulSeat(0), azulSeat(1), azulSeat(2), azulSeat(3)],
+};
+
+const azulHtml = renderToStaticMarkup(
+  React.createElement(AzulBoard, {
+    view: azulView,
+    mySeat: 0,
+    actions: [{ key: 'take:1:BLUE:2', label: '取 工厂 1 的 2 枚蓝 → 第 3 行' }],
+    log: [{ version: 1, seat: 0, text: '取 蓝 ×2 → 第 3 行', at: 1700000000000 }],
+    disabled: false,
+    onAction: () => undefined,
+  }),
+);
+
+check('花砖物语牌桌', azulHtml, [
+  '中央',
+  '你',
+  'AI 1',
+  'AI 2',
+  'AI 3',
+  '地板',
+  '点工厂或中央的一色瓦片',
+  '取 蓝 ×2 → 第 3 行',
+]);
+
 if (failed > 0) {
   console.error(`渲染冒烟失败：${failed} 项`);
   process.exit(1);

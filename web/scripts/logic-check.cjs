@@ -134,7 +134,50 @@ check(
   selectionAction({ gems: ['red', 'black'] }, { discarding: false }, actions) === undefined,
 );
 
-// 9. 音量设置
+// 9. 花砖物语：取砖选择
+const azul = require('../src/games/azul/selection.ts');
+check(
+  '瓦片按颜色分组且顺序固定',
+  JSON.stringify(azul.groupTiles(['red', 'blue', 'blue', 'red'])) ===
+    JSON.stringify([
+      { color: 'blue', count: 2 },
+      { color: 'red', count: 2 },
+    ]),
+  azul.groupTiles(['red', 'blue', 'blue', 'red']),
+);
+check('取砖 key 格式正确', azul.takeKey(-1, 'blue', 3) === 'take:-1:BLUE:3', azul.takeKey(-1, 'blue', 3));
+check(
+  '可用目标行从动作里解析',
+  JSON.stringify(
+    azul.availableTargets(
+      [
+        { key: 'take:2:BLUE:0', label: '' },
+        { key: 'take:2:BLUE:-1', label: '' },
+        { key: 'take:2:RED:1', label: '' },
+      ],
+      2,
+      'blue',
+    ),
+  ) === JSON.stringify([0, -1]),
+);
+const emptyLine = { color: null, count: 0, capacity: 5 };
+check(
+  '空行全部放得下',
+  JSON.stringify(azul.ghostPlacement(emptyLine, 'blue', 3)) ===
+    JSON.stringify({ placed: 3, overflow: 0, lineColor: 'blue' }),
+);
+check(
+  '半满行只放剩余容量',
+  JSON.stringify(azul.ghostPlacement({ color: 'blue', count: 2, capacity: 3 }, 'blue', 3)) ===
+    JSON.stringify({ placed: 1, overflow: 2, lineColor: 'blue' }),
+);
+check(
+  '异色行一块也放不下',
+  JSON.stringify(azul.ghostPlacement({ color: 'red', count: 1, capacity: 3 }, 'blue', 2)) ===
+    JSON.stringify({ placed: 0, overflow: 2, lineColor: 'red' }),
+);
+
+// 10. 音量设置
 const { clampVolume, DEFAULT_VOLUME, loadVolume } = require('../src/lib/audio-settings.ts');
 check('音量默认 70', DEFAULT_VOLUME === 70, DEFAULT_VOLUME);
 check('音量钳制下限', clampVolume(-10) === 0, clampVolume(-10));

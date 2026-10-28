@@ -2,6 +2,7 @@ package boardgame.server.config;
 
 import boardgame.engine.core.GameAdapter;
 import boardgame.engine.core.GameDefinition;
+import boardgame.engine.games.azul.rules.AzulDefinition;
 import boardgame.engine.games.splendor.rules.SplendorDefinition;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -17,6 +18,7 @@ public class GameCatalog {
 
     public GameCatalog() {
         register(new SplendorDefinition());
+        register(new AzulDefinition());
     }
 
     private void register(GameDefinition<?, ?> definition) {

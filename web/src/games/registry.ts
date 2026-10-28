@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import type { ActionOption, LogItem } from '../api/types';
 import { SplendorBoard } from './splendor/SplendorBoard';
+import { AzulBoard } from './azul/AzulBoard';
 
 export interface BoardProps {
   view: unknown;
@@ -16,6 +17,7 @@ export interface BoardProps {
  */
 export const GAME_BOARDS: Record<string, ComponentType<BoardProps>> = {
   splendor: SplendorBoard as ComponentType<BoardProps>,
+  azul: AzulBoard as ComponentType<BoardProps>,
 };
 
 export function boardFor(gameId: string): ComponentType<BoardProps> | undefined {

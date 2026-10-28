@@ -96,3 +96,29 @@ java -jar server/target/boardgame.jar
 
 **为什么不把图直接提交进仓库？**
 《璀璨宝石》的插画版权归出版社，仓库只以 MIT 分发代码。图片目录已在 `.gitignore` 里，导入脚本也不会上传。
+
+## 花砖物语（Azul）
+
+花砖物语只需要 6 张图，仓库里默认是自绘的阿拉伯纹样，不依赖任何外部素材：
+
+| 文件 | 说明 |
+|---|---|
+| `tile-blue.png` | 蓝色瓦片 |
+| `tile-yellow.png` | 黄色瓦片 |
+| `tile-red.png` | 红色瓦片 |
+| `tile-black.png` | 黑色瓦片 |
+| `tile-white.png` | 白色瓦片 |
+| `tile-start.png` | 首拿标记 |
+
+放到 `web/public/art-official/azul/` 即可，同样支持 png / jpg / webp，缺哪张就只有那张退回自绘。
+不需要导入脚本，也不需要改命名规则——文件名就是上面这 6 个。
+
+注意：没有提供花砖物语的抓图脚本。GitHub 上能找到的实现要么用自绘 SVG 且仓库无许可证，要么是官方素材转载，
+都不适合作为默认来源；想要官方图请自己准备合法素材。
+
+```bash
+# 放好之后重新构建
+cd web && npm run build:local
+cd .. && mvn clean package
+```
+

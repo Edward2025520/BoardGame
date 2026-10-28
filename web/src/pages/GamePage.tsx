@@ -67,7 +67,7 @@ function GameView({ sessionId }: { sessionId: string }) {
         <div className="hint">这个游戏还没有界面。</div>
       )}
 
-      {fallbackArt > 0 && (
+      {fallbackArt > 0 && session.gameId === 'splendor' && (
         <p className="art-hint">
           当前显示的是自绘卡面：没有找到官方图。在仓库根目录运行
           <code> node tools/fetch-splendor-art.mjs </code>

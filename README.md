@@ -141,7 +141,7 @@ node tools/import-card-art.mjs "D:/下载的序号图"
 ## Roadmap
 
 - [x] 璀璨宝石（2/3/4 人、四档 AI、点选交互、官方卡面导入）
-- [ ] 花砖物语 Azul（用来验证引擎抽象：只加 `games/azul`，不改 `engine/core`）
+- [x] 花砖物语 Azul（2/3/4 人、完整规则、四边牌桌、自绘瓦片，`engine/core` 未改动）
 - [ ] 联机对局（状态与动作已可序列化，还差房间与鉴权）
 
 ## 目录
