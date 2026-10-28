@@ -131,10 +131,12 @@ public final class GameSession {
     }
 
     public void apply(Action action, String description) {
+        // 必须先记下行动者：apply 之后 currentSeat 已经轮到下家了
+        int actor = game.currentSeat(state);
         state = game.apply(state, action);
         version++;
         updatedAt = Instant.now();
-        log.add(new LogEntry(version, currentSeat(), description, updatedAt.toEpochMilli()));
+        log.add(new LogEntry(version, actor, description, updatedAt.toEpochMilli()));
     }
 
     public void note(String description) {

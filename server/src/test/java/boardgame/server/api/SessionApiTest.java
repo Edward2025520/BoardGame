@@ -59,6 +59,9 @@ class SessionApiTest {
         org.junit.jupiter.api.Assertions.assertEquals(created.get("version").asInt() + 1,
                 after.get("version").asInt());
         org.junit.jupiter.api.Assertions.assertEquals(1, after.get("currentSeat").asInt());
+        JsonNode log = after.get("log");
+        org.junit.jupiter.api.Assertions.assertEquals(0, log.get(log.size() - 1).get("seat").asInt(),
+                "日志应记给刚行动的座位 0");
     }
 
     @Test
