@@ -2,6 +2,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useSession } from '../hooks/useSession';
 import { boardFor } from '../games/registry';
 import { useArtFallbackCount } from '../components/Art';
+import { SoundPanel } from '../components/SoundPanel';
 
 export function GamePage() {
   const [params] = useSearchParams();
@@ -35,7 +36,6 @@ function GameView({ sessionId }: { sessionId: string }) {
   const view = session.boards[String(mySeat)];
   const Board = boardFor(session.gameId);
   const myTurn = !session.finished && session.currentSeat === mySeat && !session.aiThinking;
-  const recent = [...session.log].slice(-8).reverse();
 
   return (
     <main className="page game-page">
@@ -44,37 +44,36 @@ function GameView({ sessionId }: { sessionId: string }) {
           ← 大厅
         </Link>
         <h1>{session.gameName}</h1>
+        <span className="badge">{session.seatCount} 人</span>
         <span className="badge">{session.difficulty}</span>
         <span className="version">第 {session.version} 手</span>
         {session.aiThinking && <span className="thinking">AI 思考中…</span>}
         {session.finished && <span className="badge done">已结束</span>}
+        <SoundPanel />
       </header>
 
       {error && <div className="error">{error}</div>}
 
       {Board && view !== undefined ? (
-        <Board view={view} mySeat={mySeat} actions={session.legalActions} disabled={!myTurn} onAction={act} />
+        <Board
+          view={view}
+          mySeat={mySeat}
+          actions={session.legalActions}
+          log={session.log}
+          disabled={!myTurn}
+          onAction={act}
+        />
       ) : (
         <div className="hint">这个游戏还没有界面。</div>
       )}
 
-      <footer className="game-foot">
-        {fallbackArt > 0 && (
-          <p className="art-hint">
-            当前显示的是自绘卡面：没有找到官方图。在仓库根目录运行
-            <code> node tools/fetch-splendor-art.mjs </code>
-            抓取一次后重新构建即可换上官方卡面。
-          </p>
-        )}
-        <div className="log">
-          {recent.map((item) => (
-            <div key={`${item.version}-${item.at}`} className="log-line">
-              <span className="log-seat">P{item.seat + 1}</span>
-              {item.text}
-            </div>
-          ))}
-        </div>
-      </footer>
+      {fallbackArt > 0 && (
+        <p className="art-hint">
+          当前显示的是自绘卡面：没有找到官方图。在仓库根目录运行
+          <code> node tools/fetch-splendor-art.mjs </code>
+          抓取一次后重新构建即可换上官方卡面。
+        </p>
+      )}
 
       {session.outcome && (
         <div className="overlay">

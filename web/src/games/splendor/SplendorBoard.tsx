@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ActionOption, Gem, SplendorCard, SplendorView } from '../../api/types';
-import { isMuted, play, setMuted } from '../../lib/audio';
+import type { ActionOption, Gem, LogItem, SplendorCard, SplendorView } from '../../api/types';
+import { play } from '../../lib/audio';
 import { CardArt } from './art';
-import { CardRows, GemBank, MyPanel, NoblesRow, OpponentStrip } from './parts';
+import { CardRows, GemBank, LogPanel, MyPanel, NoblesRow, OpponentStrip } from './parts';
 import { emptySelection, selectionAction, toggleGem, type Selection } from './selection';
 
 interface Props {
   view: SplendorView;
   mySeat: number;
   actions: ActionOption[];
+  log: LogItem[];
   disabled: boolean;
   onAction: (key: string) => void;
 }
@@ -28,11 +29,10 @@ const GEM_LABEL: Record<string, string> = {
   gold: '金',
 };
 
-export function SplendorBoard({ view, mySeat, actions, disabled, onAction }: Props) {
+export function SplendorBoard({ view, mySeat, actions, log, disabled, onAction }: Props) {
   const [selection, setSelection] = useState<Selection>(emptySelection);
   const [hint, setHint] = useState<string | null>(null);
   const [flight, setFlight] = useState<Flight | null>(null);
-  const [muted, setMutedState] = useState(isMuted());
   const panelRef = useRef<HTMLDivElement | null>(null);
 
   // 每次局面更新都清空选择，避免拿着上一手的选中状态误操作
@@ -49,6 +49,12 @@ export function SplendorBoard({ view, mySeat, actions, disabled, onAction }: Pro
   const keys = useMemo(() => new Set(actions.map((action) => action.key)), [actions]);
   const selectedAction = selectionAction(selection, { discarding }, actions);
   const opponents = view.seats.filter((item) => item.seat !== mySeat);
+  const labelBySeat = new Map<number, string>();
+  opponents.forEach((opponent, index) => labelBySeat.set(opponent.seat, `AI ${index + 1}`));
+  const labelFor = (seatNumber: number) =>
+    seatNumber === mySeat ? '你' : (labelBySeat.get(seatNumber) ?? 'AI');
+  // 官方摆法：3 级在上，1 级在下
+  const orderedRows = useMemo(() => [...view.rows].sort((left, right) => right.tier - left.tier), [view.rows]);
 
   const clickGem = (gem: Gem) => {
     if (disabled) {
@@ -57,14 +63,14 @@ export function SplendorBoard({ view, mySeat, actions, disabled, onAction }: Pro
     const result = toggleGem(selection, gem, { discarding, maxDiscard });
     setSelection(result.selection);
     setHint(result.hint ?? null);
-    play(result.hint ? 'error' : 'click');
+    play(result.hint ? 'error' : 'select');
   };
 
   const confirm = () => {
     if (!selectedAction || disabled) {
       return;
     }
-    play(selectedAction.key.startsWith('take') ? 'take' : 'click');
+    play(selectedAction.key.startsWith('take') ? 'take' : 'select');
     onAction(selectedAction.key);
     setSelection(emptySelection);
     setHint(null);
@@ -96,7 +102,7 @@ export function SplendorBoard({ view, mySeat, actions, disabled, onAction }: Pro
     if (disabled || !keys.has(key)) {
       return;
     }
-    play('click');
+    play('select');
     onAction(key);
   };
 
@@ -105,7 +111,7 @@ export function SplendorBoard({ view, mySeat, actions, disabled, onAction }: Pro
     if (disabled || !keys.has(key)) {
       return;
     }
-    play('click');
+    play('select');
     onAction(key);
   };
 
@@ -127,79 +133,77 @@ export function SplendorBoard({ view, mySeat, actions, disabled, onAction }: Pro
         : '点宝石取牌，或点卡牌上的「购买 / 预留」';
 
   return (
-    <div className="board">
-      <div className="opponents">
-        {opponents.map((opponent) => (
-          <OpponentStrip key={opponent.seat} seat={opponent} index={opponent.seat} />
-        ))}
-      </div>
+    <div className="game-layout">
+      <div className="board-main">
+        <NoblesRow nobles={view.nobles} choosable={!disabled && choosingNoble} onChoose={chooseNoble} />
 
-      <NoblesRow nobles={view.nobles} choosable={!disabled && choosingNoble} onChoose={chooseNoble} />
-
-      <CardRows
-        view={view}
-        seat={seat}
-        keys={keys}
-        disabled={disabled}
-        onBuy={buy}
-        onReserve={reserve}
-        onDeckReserve={deckReserve}
-      />
-
-      <GemBank
-        bank={view.bank}
-        goldBank={view.goldBank}
-        selected={selection.gems}
-        selectable={!disabled && !discarding && !choosingNoble}
-        onSelect={clickGem}
-      />
-
-      <div className="status-line">{status}</div>
-
-      <div className="selection-bar">
-        {selection.gems.length > 0 ? (
-          <>
-            <span className="selection-summary">
-              已选 {selection.gems.map((gem) => GEM_LABEL[gem] ?? gem).join(' + ')}
-            </span>
-            <button type="button" className="primary" disabled={!selectedAction || disabled} onClick={confirm}>
-              {selectedAction ? `确认：${selectedAction.label}` : '还不能确认'}
-            </button>
-            <button type="button" className="ghost" onClick={() => setSelection(emptySelection)}>
-              取消
-            </button>
-          </>
-        ) : (
-          <span className="hint">{discarding ? '点击下方自己的宝石选择要弃的' : '选中的宝石会显示在这里'}</span>
-        )}
-        {hint && <span className="hint error">{hint}</span>}
-        {keys.has('pass') && !disabled && (
-          <button type="button" className="ghost" onClick={() => onAction('pass')}>
-            跳过
-          </button>
-        )}
-        <button
-          type="button"
-          className="ghost sound-toggle"
-          onClick={() => {
-            setMuted(!muted);
-            setMutedState(!muted);
-          }}
-          title={muted ? '开启音效' : '关闭音效'}
-        >
-          {muted ? '音效关' : '音效开'}
-        </button>
-      </div>
-
-      <div ref={panelRef}>
-        <MyPanel
+        <CardRows
+          rows={orderedRows}
           seat={seat}
-          label="你"
-          discarding={discarding && !disabled}
-          selectedGems={selection.gems}
-          onDiscardClick={clickGem}
+          keys={keys}
+          disabled={disabled}
+          onBuy={buy}
+          onReserve={reserve}
+          onDeckReserve={deckReserve}
         />
+
+        <GemBank
+          bank={view.bank}
+          goldBank={view.goldBank}
+          selected={selection.gems}
+          selectable={!disabled && !discarding && !choosingNoble}
+          onSelect={clickGem}
+        />
+
+        <div className="status-line">{status}</div>
+
+        <div className="selection-bar">
+          {selection.gems.length > 0 ? (
+            <>
+              <span className="selection-summary">
+                已选 {selection.gems.map((gem) => GEM_LABEL[gem] ?? gem).join(' + ')}
+              </span>
+              <button type="button" className="primary" disabled={!selectedAction || disabled} onClick={confirm}>
+                {selectedAction ? `确认：${selectedAction.label}` : '还不能确认'}
+              </button>
+              <button type="button" className="ghost" onClick={() => setSelection(emptySelection)}>
+                取消
+              </button>
+            </>
+          ) : (
+            <span className="hint">{discarding ? '点击下方自己的宝石选择要弃的' : '选中的宝石会显示在这里'}</span>
+          )}
+          {hint && <span className="hint error">{hint}</span>}
+          {keys.has('pass') && !disabled && (
+            <button type="button" className="ghost" onClick={() => onAction('pass')}>
+              跳过
+            </button>
+          )}
+        </div>
+
+        <div ref={panelRef}>
+          <MyPanel
+            seat={seat}
+            label="你"
+            discarding={discarding && !disabled}
+            selectedGems={selection.gems}
+            onDiscardClick={clickGem}
+          />
+        </div>
       </div>
+
+      <aside className="board-rail">
+        <div className="rail-opponents">
+          {opponents.map((opponent) => (
+            <OpponentStrip
+              key={opponent.seat}
+              seat={opponent}
+              label={labelBySeat.get(opponent.seat) ?? 'AI'}
+            />
+          ))}
+        </div>
+        <LogPanel log={log} labelFor={labelFor} />
+      </aside>
 
       {flight && <FlyingCard flight={flight} />}
     </div>

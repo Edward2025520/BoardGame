@@ -134,6 +134,14 @@ check(
   selectionAction({ gems: ['red', 'black'] }, { discarding: false }, actions) === undefined,
 );
 
+// 9. 音量设置
+const { clampVolume, DEFAULT_VOLUME, loadVolume } = require('../src/lib/audio-settings.ts');
+check('音量默认 70', DEFAULT_VOLUME === 70, DEFAULT_VOLUME);
+check('音量钳制下限', clampVolume(-10) === 0, clampVolume(-10));
+check('音量钳制上限', clampVolume(150) === 100, clampVolume(150));
+check('音量四舍五入', clampVolume(33.6) === 34, clampVolume(33.6));
+check('没有 localStorage 时用默认值', loadVolume() === DEFAULT_VOLUME, loadVolume());
+
 if (failed > 0) {
   console.error(`交互逻辑校验失败：${failed} 项`);
   process.exit(1);

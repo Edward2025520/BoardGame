@@ -10,10 +10,13 @@ const DIFFICULTIES: { value: Difficulty; label: string; hint: string }[] = [
   { value: 'EXPERT', label: '地狱', hint: '约 6 秒' },
 ];
 
+const SEAT_COUNTS = [2, 3, 4];
+
 export function Lobby() {
   const navigate = useNavigate();
   const [games, setGames] = useState<GameSummary[]>([]);
   const [difficulty, setDifficulty] = useState<Difficulty>('NORMAL');
+  const [seatCount, setSeatCount] = useState(2);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
 
@@ -28,7 +31,7 @@ export function Lobby() {
     try {
       const session = await createSession({
         gameId: game.id,
-        seatCount: 2,
+        seatCount,
         humanSeats: [0],
         difficulty,
       });
@@ -45,6 +48,23 @@ export function Lobby() {
         <h1>桌游合集</h1>
         <p>和 AI 对战的德式桌游，纯本地运行。</p>
       </header>
+
+      <section className="difficulty">
+        <span className="section-title">人数</span>
+        <div className="chips">
+          {SEAT_COUNTS.map((count) => (
+            <button
+              key={count}
+              type="button"
+              className={seatCount === count ? 'chip active' : 'chip'}
+              onClick={() => setSeatCount(count)}
+            >
+              {count} 人
+              <small>你 + {count - 1} 个 AI</small>
+            </button>
+          ))}
+        </div>
+      </section>
 
       <section className="difficulty">
         <span className="section-title">AI 难度</span>

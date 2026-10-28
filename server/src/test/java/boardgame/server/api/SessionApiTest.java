@@ -106,6 +106,28 @@ class SessionApiTest {
         org.junit.jupiter.api.Assertions.assertEquals(0, latest.get("currentSeat").asInt());
     }
 
+    @Test
+    @DisplayName("四人局会连续跑完三个 AI 的回合")
+    void fourPlayerSessionRunsAiChain() throws Exception {
+        JsonNode created = createSession(4, "[0]", "EASY");
+        String sessionId = created.get("sessionId").asText();
+        org.junit.jupiter.api.Assertions.assertEquals(4, created.get("seats").size());
+
+        postAction(sessionId, created.get("legalActions").get(0).get("key").asText(),
+                created.get("version").asInt(), 202);
+
+        JsonNode latest = getSession(sessionId);
+        long deadline = System.currentTimeMillis() + 15000;
+        while (System.currentTimeMillis() < deadline && latest.get("version").asInt() < 4) {
+            Thread.sleep(100);
+            latest = getSession(sessionId);
+        }
+
+        org.junit.jupiter.api.Assertions.assertTrue(latest.get("version").asInt() >= 4,
+                "三个 AI 没有依次行动：" + latest.get("version").asInt());
+        org.junit.jupiter.api.Assertions.assertEquals(0, latest.get("currentSeat").asInt());
+    }
+
     private JsonNode createSession(int seats, String humanSeats, String difficulty) throws Exception {
         String body = mapper.writeValueAsString(Map.of(
                 "gameId", "splendor",

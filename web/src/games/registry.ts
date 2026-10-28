@@ -1,11 +1,12 @@
 import type { ComponentType } from 'react';
-import type { ActionOption } from '../api/types';
+import type { ActionOption, LogItem } from '../api/types';
 import { SplendorBoard } from './splendor/SplendorBoard';
 
 export interface BoardProps {
   view: unknown;
   mySeat: number;
   actions: ActionOption[];
+  log: LogItem[];
   disabled: boolean;
   onAction: (key: string) => void;
 }

@@ -3,10 +3,11 @@ import {
   GEM_COLOR,
   GEM_LABEL,
   type Gem,
+  type LogItem,
   type SplendorCard,
   type SplendorNoble,
+  type SplendorRow,
   type SplendorSeat,
-  type SplendorView,
 } from '../../api/types';
 import { cardShortfall, shortfallText } from './selection';
 import { CardArt, GemCircle, NobleArt } from './art';
@@ -15,32 +16,49 @@ export function Avatar({ label, mine }: { label: string; mine?: boolean }) {
   return <span className={mine ? 'avatar mine' : 'avatar'}>{label.slice(0, 1)}</span>;
 }
 
-export function OpponentStrip({ seat, index }: { seat: SplendorSeat; index: number }) {
+export function OpponentStrip({ seat, label }: { seat: SplendorSeat; label: string }) {
   return (
     <div className={seat.current ? 'opponent current' : 'opponent'}>
-      <Avatar label={`P${index + 1}`} />
-      <div className="opponent-body">
-        <div className="opponent-head">
-          <span>对手 {index + 1}</span>
-          <strong>{seat.points} 分</strong>
-        </div>
-        <div className="opponent-gems">
-          {GEMS.slice(0, 5).map((gem, gemIndex) => (
-            <span key={gem} className="pip" style={{ background: GEM_COLOR[gem as Gem] }}>
-              {seat.tokens[gemIndex] > 0 ? seat.tokens[gemIndex] : ''}
+      <div className="opponent-head">
+        <Avatar label={label} />
+        <span className="opponent-name">{label}</span>
+        <strong>{seat.points} 分</strong>
+      </div>
+      <div className="opponent-gems">
+        {GEMS.slice(0, 5).map((gem, gemIndex) => (
+          <span key={gem} className="pip" style={{ background: GEM_COLOR[gem as Gem] }}>
+            {seat.tokens[gemIndex] > 0 ? seat.tokens[gemIndex] : ''}
+          </span>
+        ))}
+        <span className="pip gold">{seat.tokens[5] > 0 ? seat.tokens[5] : ''}</span>
+        {seat.bonuses.map((count, gemIndex) =>
+          count > 0 ? (
+            <span key={`bonus-${gemIndex}`} className="bonus-chip">
+              {GEM_LABEL[GEMS[gemIndex] as Gem]}
+              {count}
             </span>
-          ))}
-          <span className="pip gold">{seat.tokens[5] > 0 ? seat.tokens[5] : ''}</span>
-          {seat.bonuses.map((count, gemIndex) =>
-            count > 0 ? (
-              <span key={`bonus-${gemIndex}`} className="bonus-chip">
-                {GEM_LABEL[GEMS[gemIndex] as Gem]}
-                {count}
-              </span>
-            ) : null,
-          )}
-          <span className="bonus-chip">留 {seat.reservedCount}/3</span>
-        </div>
+          ) : null,
+        )}
+        <span className="bonus-chip">留 {seat.reservedCount}/3</span>
+        <span className="bonus-chip">{seat.cards} 卡</span>
+      </div>
+    </div>
+  );
+}
+
+export function LogPanel({ log, labelFor }: { log: LogItem[]; labelFor: (seat: number) => string }) {
+  const recent = [...log].slice(-14).reverse();
+  return (
+    <div className="log-panel">
+      <div className="log-head">对局记录</div>
+      <div className="log-body">
+        {recent.length === 0 && <span className="hint">还没有动作</span>}
+        {recent.map((item) => (
+          <div key={`${item.version}-${item.at}`} className="log-line">
+            <span className="log-seat">{labelFor(item.seat)}</span>
+            {item.text}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -126,7 +144,7 @@ export function CardTile({
 }
 
 export function CardRows({
-  view,
+  rows,
   seat,
   keys,
   disabled,
@@ -134,7 +152,7 @@ export function CardRows({
   onReserve,
   onDeckReserve,
 }: {
-  view: SplendorView;
+  rows: SplendorRow[];
   seat: SplendorSeat;
   keys: Set<string>;
   disabled: boolean;
@@ -144,7 +162,7 @@ export function CardRows({
 }) {
   return (
     <div className="rows">
-      {view.rows.map((row) => (
+      {rows.map((row) => (
         <div className="row" key={row.tier}>
           <button
             type="button"

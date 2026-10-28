@@ -795,3 +795,139 @@ img.art {
     display: none;
   }
 }
+
+/* 左牌桌 + 右栏 */
+.game-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 16px;
+  align-items: start;
+}
+
+.board-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.board-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: sticky;
+  top: 12px;
+}
+
+.rail-opponents {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.opponent {
+  flex: none;
+  display: block;
+  padding: 8px 10px;
+}
+
+.opponent-name {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.log-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.log-head {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+
+.log-body {
+  max-height: 42vh;
+  overflow: auto;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+/* 音效设置 */
+.sound-wrap {
+  position: relative;
+  margin-left: auto;
+}
+
+.sound-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 40;
+  width: 220px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.sound-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.sound-row input[type='range'] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.sound-value {
+  width: 28px;
+  text-align: right;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1100px) {
+  .game-layout {
+    grid-template-columns: minmax(0, 1fr) 260px;
+  }
+}
+
+@media (max-width: 900px) {
+  .game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .board-rail {
+    position: static;
+  }
+
+  .rail-opponents {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .rail-opponents .opponent {
+    flex: 1 1 210px;
+  }
+
+  .log-body {
+    max-height: 140px;
+  }
+
+  .sound-wrap {
+    margin-left: 0;
+  }
+}
+
