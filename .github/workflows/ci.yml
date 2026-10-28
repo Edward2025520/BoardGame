@@ -29,6 +29,9 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: web/package-lock.json
+      - name: Art naming tests
+        working-directory: .
+        run: node tools/art-names.test.mjs
       - run: npm ci
       - run: npm run typecheck
       - run: npm test

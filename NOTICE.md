@@ -14,8 +14,17 @@
 仓库内 `web/src/games/*/art.tsx` 中的图形是本项目自绘的几何示意，仅用于标识卡牌等级、颜色与费用，与官方美术无关。
 
 `web/public/art-official/` 目录用于本地放置用户自备的官方图片，该目录已在 `.gitignore` 中，不随仓库分发。
-`tools/fetch-splendor-art.mjs` 只是从公开镜像抓取该素材的便利脚本，仓库本身不包含图片。
+`tools/fetch-splendor-art.mjs` 与 `tools/import-card-art.mjs` 只是在本地准备这些图片的便利脚本，仓库本身不包含图片。
 使用者需自行确认所放置素材的合法来源与使用范围。
+
+## 数据来源
+
+- 90 张发展卡与 10 张贵族的属性（等级、颜色、分数、成本、贵族需求）来自
+  [roeey777/Splendor-AI](https://github.com/roeey777/Splendor-AI)（MIT），由 `tools/gen-splendor-data.mjs` 机器转换生成
+  `SplendorData.java`，未经人工改写。
+- `tools/art-index.json` 中的序号顺序参考 [zhefu3/shanzhai-splendor](https://github.com/zhefu3/shanzhai-splendor)
+  的 `src/engine/cards.ts`，仅用于把 `c0..c89` / `n0..n9` 映射到本项目的标准文件名。
+- 上述使用都只涉及规则参数与文件名映射这类事实数据，不包含对方的源代码、文案或美术资源。
 
 ## 代码
 

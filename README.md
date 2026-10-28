@@ -114,21 +114,35 @@ cd web && npm test       # 组件
 cd web && npm run typecheck
 ```
 
-## 美术资源与版权
+## 卡面：让克隆版显示官方图
 
-- 仓库里只有自绘的 SVG 图形（`web/src/games/*/art.tsx`），官方卡面不随仓库分发。
-- 一键抓取官方卡面（100 张，约 10MB）到本地目录，随后重新构建即可：
+仓库里只有自绘的 SVG 图形（`web/src/games/*/art.tsx`），官方卡面不随仓库分发。想要插画卡面，把图放到本地目录
+`web/public/art-official/splendor/` 后重新构建即可，这个目录已在 `.gitignore` 里。
 
-  ```bash
-  node tools/fetch-splendor-art.mjs
-  ```
+三种放法，任选其一：
 
-  脚本会把参考实现里按 id 命名的图片，按「等级-颜色-分数-成本」重新命名后写入
-  `web/public/art-official/splendor/`。该目录已在 `.gitignore` 里，不会提交。
-- 页面按 `/art-official/splendor/<名字>.png` 优先加载，依次尝试 png / jpg / webp，
-  找不到才退回自绘；文件名避开 `3b/3B` 这类大小写冲突。
-- 页脚会在用自绘卡面时给出提示，方便确认官方图到底有没有生效。
-- 《璀璨宝石》《花砖物语》的名称、规则与美术归原作者与出版社所有，本项目是非商业的学习作品。
+```bash
+# 1. 自动抓取（90 张卡 + 10 张贵族）
+node tools/fetch-splendor-art.mjs
+
+# 2. 手上的图按卡号命名，如 3g2B.png、4g4r.jpg
+node tools/import-card-art.mjs "D:/我的卡面"
+
+# 3. 纯序号命名，如 c0.png ~ c89.png
+node tools/import-card-art.mjs "D:/下载的序号图"
+```
+
+导入前可以先 `--check` 干跑，看看能识别多少、还缺哪些。命名规范、映射表、常见问题都在
+[docs/art.md](docs/art.md)。
+
+页面按 `/art-official/splendor/<标准名>.png` 优先加载，依次尝试 png / jpg / webp，找不到才退回自绘。
+页脚在缺图时会有提示，方便确认到底有没有生效。
+
+## Roadmap
+
+- [x] 璀璨宝石（2/3/4 人、四档 AI、点选交互、官方卡面导入）
+- [ ] 花砖物语 Azul（用来验证引擎抽象：只加 `games/azul`，不改 `engine/core`）
+- [ ] 联机对局（状态与动作已可序列化，还差房间与鉴权）
 
 ## 目录
 
@@ -136,7 +150,7 @@ cd web && npm run typecheck
 engine/   纯 Java 引擎、AI、会话存储
 server/   Spring Boot 外壳
 web/      React 前端
-tools/    数据生成等一次性脚本
+tools/    数据生成、卡面抓取与导入脚本
 docs/     文档
 ```
 
