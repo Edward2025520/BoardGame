@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { Art } from '../../components/Art';
-import { GEM_COLOR, GEM_LABEL, type Gem, type SplendorCard, type SplendorNoble } from '../../api/types';
+import { GEMS, GEM_COLOR, GEM_LABEL, type Gem, type SplendorCard, type SplendorNoble } from '../../api/types';
 
 const TIER_COLOR: Record<number, string> = {
   1: '#4f9d69',
@@ -152,12 +152,28 @@ export function NobleTile({ noble }: { noble: SplendorNoble }) {
   );
 }
 
+/** 卡面文件名：用「等级-颜色-分数-成本」而不是卡号，避开 3b/3B 在 Windows 上撞名。 */
+export function cardArtName(card: SplendorCard): string {
+  const cost = GEMS.slice(0, 5).map((gem) => card.cost[gem] ?? 0).join('-');
+  return `card-${card.tier}-${card.bonus}-${card.points}-${cost}`;
+}
+
+export function nobleArtName(noble: SplendorNoble): string {
+  const requirement = GEMS.slice(0, 5).map((gem) => noble.requirement[gem] ?? 0).join('-');
+  return `noble-${requirement}`;
+}
+
 export function CardArt({ card }: { card: SplendorCard }) {
   return (
-    <Art game="splendor" name={card.code} alt={`${card.tier} 级卡`} fallback={<CardFace card={card} />} />
+    <Art
+      game="splendor"
+      name={cardArtName(card)}
+      alt={`${card.tier} 级卡`}
+      fallback={<CardFace card={card} />}
+    />
   );
 }
 
 export function NobleArt({ noble }: { noble: SplendorNoble }) {
-  return <Art game="splendor" name={`noble-${noble.code}`} alt="贵族" fallback={<NobleTile noble={noble} />} />;
+  return <Art game="splendor" name={nobleArtName(noble)} alt="贵族" fallback={<NobleTile noble={noble} />} />;
 }

@@ -71,6 +71,14 @@ java -jar server/target/boardgame.jar
 > 受限环境里 Vite/esbuild 需要 spawn 子进程，可能被拒绝。这时用 `npm run build:local`：
 > 它用 TypeScript + Rollup 在进程内直接打包，产物同样是 `web/dist`。
 
+## 操作
+
+- 点宝石图标选中，再点一次取消；凑成「3 种不同颜色」或「2 个同色」后点「确认」提交。
+- 卡牌下方直接有「购买 / 预留」；牌堆可点「盲抽」，拿一张卡和一个黄金。
+- 宝石超过 10 个时回合会停在弃牌阶段，点自己面板里的宝石弃到 10 个。
+- 同时满足多个贵族时，点贵族牌选择。
+- 选中和购买有动画与合成音效，右下角可一键静音。
+
 ## AI 是怎么做的
 
 - 通用层 `engine/ai`：`MctsSearch` 对隐藏信息做多次确定性采样，每个世界跑一棵 UCT 树，再按各世界的选择投票。
@@ -105,16 +113,17 @@ cd web && npm run typecheck
 
 ## 美术资源与版权
 
-- 仓库里只有自绘的 SVG 图形（`web/src/games/*/art.tsx`）。
-- 官方插画不随仓库分发。想用官方图，把图片放到 `web/public/art-official/<游戏>/<卡号>.png`，
-  页面会优先加载它（依次尝试 png / jpg / webp），找不到再退回自绘。这个目录已在 `.gitignore` 里。
-- 文件名要和卡号一致，例如 `3g2B.png`、`noble-4g4r.jpg`。批量导入：
+- 仓库里只有自绘的 SVG 图形（`web/src/games/*/art.tsx`），官方卡面不随仓库分发。
+- 一键抓取官方卡面（100 张，约 10MB）到本地目录，随后重新构建即可：
 
   ```bash
-  node web/scripts/import-art.mjs "D:/下载的卡面" --game splendor
+  node tools/fetch-splendor-art.mjs
   ```
 
-  脚本会按卡号重命名、拷贝，并列出还缺哪些、哪些文件名对不上。
+  脚本会把参考实现里按 id 命名的图片，按「等级-颜色-分数-成本」重新命名后写入
+  `web/public/art-official/splendor/`。该目录已在 `.gitignore` 里，不会提交。
+- 页面按 `/art-official/splendor/<名字>.png` 优先加载，依次尝试 png / jpg / webp，
+  找不到才退回自绘；文件名避开 `3b/3B` 这类大小写冲突。
 - 页脚会在用自绘卡面时给出提示，方便确认官方图到底有没有生效。
 - 《璀璨宝石》《花砖物语》的名称、规则与美术归原作者与出版社所有，本项目是非商业的学习作品。
 

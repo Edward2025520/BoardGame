@@ -227,30 +227,139 @@ button {
 .board {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
-.board-top {
+/* 对手条 */
+.opponents {
   display: flex;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
+.opponent {
+  flex: 1 1 240px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+
+.opponent.current {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 1px rgba(79, 157, 105, 0.35);
+}
+
+.avatar {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #2b3346;
+  border: 1px solid var(--line);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.avatar.mine {
+  background: #3a3220;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.opponent-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.opponent-head {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 13px;
+}
+
+.opponent-head strong {
+  margin-left: auto;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.opponent-gems {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  align-items: center;
+}
+
+.pip {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  color: #1a1a20;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pip.gold {
+  background: var(--accent);
+}
+
+.bonus-chip {
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+
+/* 贵族 */
 .nobles {
   display: flex;
   gap: 10px;
   align-items: center;
+  min-height: 84px;
 }
 
 .noble {
-  width: 72px;
-  opacity: 0.75;
+  width: 76px;
+  padding: 0;
+  border: none;
+  background: none;
+  opacity: 0.7;
+  transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
 .noble.qualified {
   opacity: 1;
-  filter: drop-shadow(0 0 8px rgba(216, 178, 60, 0.5));
+  filter: drop-shadow(0 0 8px rgba(216, 178, 60, 0.45));
+}
+
+.noble.choosable {
+  cursor: pointer;
+  animation: breathe 1.6s ease-in-out infinite;
+}
+
+.noble:disabled {
+  cursor: default;
+}
+
+@keyframes breathe {
+  50% {
+    transform: translateY(-3px);
+  }
 }
 
 .noble-tile,
@@ -261,39 +370,10 @@ button {
 }
 
 img.art {
-  border-radius: 8px;
+  border-radius: 6px;
 }
 
-.final-round {
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  border-radius: 999px;
-  padding: 3px 10px;
-  font-size: 12px;
-}
-
-.bank {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 8px 14px;
-}
-
-.bank-gem {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-variant-numeric: tabular-nums;
-}
-
-.gem-badge {
-  width: 26px;
-  height: 26px;
-}
-
+/* 牌桌 */
 .rows {
   display: flex;
   flex-direction: column;
@@ -307,20 +387,31 @@ img.art {
 }
 
 .deck {
-  width: 46px;
-  border: 1px dashed var(--line);
-  border-radius: 8px;
+  flex: 0 0 74px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   color: var(--muted);
-  font-size: 13px;
-  background: var(--panel);
+  font-size: 15px;
+  background: repeating-linear-gradient(160deg, #1d2434, #1d2434 4px, #1a2130 4px, #1a2130 8px);
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.deck:disabled {
+  cursor: default;
+  opacity: 0.55;
 }
 
 .deck small {
   font-size: 10px;
+}
+
+.deck-action {
+  color: var(--accent);
 }
 
 .row-cards {
@@ -330,126 +421,283 @@ img.art {
 }
 
 .card {
-  width: 78px;
-  border-radius: 10px;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
-}
-
-.card.affordable {
-  box-shadow: 0 0 0 2px rgba(216, 178, 60, 0.55);
+  width: 132px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transition: transform 0.14s ease;
 }
 
 .card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
 }
 
-.seats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+.card-art {
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.card.affordable .card-art {
+  box-shadow: 0 0 0 2px rgba(216, 178, 60, 0.7), 0 2px 10px rgba(216, 178, 60, 0.2);
+}
+
+.card-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.card-actions button {
+  flex: 1;
+  font-size: 12px;
+  padding: 3px 0;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  cursor: pointer;
+}
+
+.card-actions .buy:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.card-actions .reserve:not(:disabled) {
+  border-color: var(--accent-2);
+  color: #9fd6b3;
+}
+
+.card-actions button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.card-status {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-status.ok {
+  color: var(--accent);
+}
+
+/* 宝石银行 */
+.gem-bank {
+  display: flex;
   gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 8px 14px;
 }
 
-.seat-panel {
+.gem-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 2px 2px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+
+.gem-button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.gem-button:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.gem-button.picked {
+  transform: translateY(-6px);
+  background: rgba(216, 178, 60, 0.14);
+  border-color: var(--accent);
+}
+
+.gem-button.static {
+  cursor: default;
+  opacity: 0.9;
+}
+
+.gem-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.gem-count {
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+  min-width: 14px;
+  text-align: center;
+}
+
+.gem-picked {
+  position: absolute;
+  top: -4px;
+  right: -2px;
+  background: var(--accent);
+  color: #241d0b;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 状态与确认条 */
+.status-line {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 2px 4px;
+}
+
+.selection-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 10px 14px;
+  min-height: 52px;
+}
+
+.selection-summary {
+  font-size: 14px;
+  color: var(--accent);
+}
+
+.ghost {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.ghost:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.sound-toggle {
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.hint.error {
+  color: #e0a19c;
+}
+
+/* 我的面板 */
+.my-panel {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.seat-panel.mine {
-  border-color: #3a4560;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
   background: linear-gradient(160deg, #1f2534, var(--panel));
+  border: 1px solid #3a4560;
+  border-radius: 14px;
+  padding: 10px 14px;
 }
 
-.seat-head {
+.my-head {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.seat-name {
+.my-name {
   font-weight: 600;
-  font-size: 14px;
 }
 
-.seat-points {
-  margin-left: auto;
+.my-points {
   color: var(--accent);
   font-variant-numeric: tabular-nums;
 }
 
-.turn-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent-2);
-  box-shadow: 0 0 8px var(--accent-2);
-}
-
-.seat-line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-items: center;
-}
-
-.mini-token {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.5);
-  color: #1a1a20;
-  font-size: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-}
-
-.mini-token.gold {
-  color: #3a2c05;
-}
-
-.mini-bonus {
-  font-size: 11px;
+.my-cards {
   color: var(--muted);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 1px 5px;
+  font-size: 12px;
 }
 
-.seat-reserved {
+.my-gems {
   display: flex;
   gap: 6px;
+  align-items: center;
+}
+
+.gem-token {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  padding: 3px 8px 3px 4px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  cursor: default;
+}
+
+.gem-token:not(:disabled) {
+  cursor: pointer;
+}
+
+.gem-token.picked {
+  border-color: var(--accent);
+  background: rgba(216, 178, 60, 0.14);
+}
+
+.gem-token .dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.5);
+}
+
+.gem-token .dot.gold {
+  background: var(--accent);
+}
+
+.my-bonuses {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.my-reserved {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
 }
 
 .reserved-card {
-  width: 44px;
+  width: 54px;
 }
 
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 12px;
-}
-
-.action-group {
-  display: flex;
-  gap: 10px;
-  align-items: baseline;
-}
-
-.action-title {
-  flex: 0 0 60px;
-  color: var(--muted);
-  font-size: 12px;
+.fly-card {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  transition: transform 0.42s cubic-bezier(0.2, 0.7, 0.3, 1), opacity 0.42s ease;
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 .game-foot {
@@ -468,7 +716,7 @@ img.art {
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 10px 14px;
-  max-height: 180px;
+  max-height: 160px;
   overflow: auto;
   font-size: 13px;
 }
@@ -512,20 +760,38 @@ img.art {
   margin-top: 0;
 }
 
-@media (max-width: 640px) {
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .gem-button,
+  .fly-card,
+  .noble {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+@media (max-width: 720px) {
   .card {
-    width: 62px;
+    width: 96px;
+  }
+
+  .row {
+    gap: 6px;
+  }
+
+  .deck {
+    flex-basis: 54px;
   }
 
   .noble {
-    width: 56px;
+    width: 60px;
   }
 
-  .action-group {
-    flex-direction: column;
+  .my-reserved {
+    margin-left: 0;
   }
 
-  .action-title {
-    flex-basis: auto;
+  .fly-card {
+    display: none;
   }
 }

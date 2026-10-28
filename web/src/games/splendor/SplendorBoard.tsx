@@ -1,13 +1,9 @@
-import {
-  GEMS,
-  GEM_COLOR,
-  GEM_LABEL,
-  type ActionOption,
-  type Gem,
-  type SplendorSeat,
-  type SplendorView,
-} from '../../api/types';
-import { CardArt, GemCircle, NobleArt } from './art';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ActionOption, Gem, SplendorCard, SplendorView } from '../../api/types';
+import { isMuted, play, setMuted } from '../../lib/audio';
+import { CardArt } from './art';
+import { CardRows, GemBank, MyPanel, NoblesRow, OpponentStrip } from './parts';
+import { emptySelection, selectionAction, toggleGem, type Selection } from './selection';
 
 interface Props {
   view: SplendorView;
@@ -17,159 +13,223 @@ interface Props {
   onAction: (key: string) => void;
 }
 
-const GROUPS: { prefix: string; title: string }[] = [
-  { prefix: 'take:', title: '拿宝石' },
-  { prefix: 'buy:', title: '购买' },
-  { prefix: 'reserve:', title: '预留' },
-  { prefix: 'discard:', title: '弃宝石' },
-  { prefix: 'noble:', title: '选贵族' },
-  { prefix: 'pass', title: '其它' },
-];
+interface Flight {
+  card: SplendorCard;
+  from: DOMRect;
+  to: DOMRect;
+}
+
+const GEM_LABEL: Record<string, string> = {
+  white: '白',
+  blue: '蓝',
+  green: '绿',
+  red: '红',
+  black: '黑',
+  gold: '金',
+};
 
 export function SplendorBoard({ view, mySeat, actions, disabled, onAction }: Props) {
-  const affordable = new Set(
-    actions.filter((action) => action.key.startsWith('buy:')).map((action) => action.key.slice(4)),
-  );
-  const mine = view.seats[mySeat];
-  const opponents = view.seats.filter((seat) => seat.seat !== mySeat);
+  const [selection, setSelection] = useState<Selection>(emptySelection);
+  const [hint, setHint] = useState<string | null>(null);
+  const [flight, setFlight] = useState<Flight | null>(null);
+  const [muted, setMutedState] = useState(isMuted());
+  const panelRef = useRef<HTMLDivElement | null>(null);
+
+  // 每次局面更新都清空选择，避免拿着上一手的选中状态误操作
+  useEffect(() => {
+    setSelection(emptySelection);
+    setHint(null);
+  }, [view]);
+
+  const seat = view.seats[mySeat];
+  const discarding = view.phase === 'DISCARD';
+  const choosingNoble = view.phase === 'CHOOSE_NOBLE';
+  const totalTokens = seat.tokens.reduce((sum, count) => sum + count, 0);
+  const maxDiscard = Math.max(0, totalTokens - 10);
+  const keys = useMemo(() => new Set(actions.map((action) => action.key)), [actions]);
+  const selectedAction = selectionAction(selection, { discarding }, actions);
+  const opponents = view.seats.filter((item) => item.seat !== mySeat);
+
+  const clickGem = (gem: Gem) => {
+    if (disabled) {
+      return;
+    }
+    const result = toggleGem(selection, gem, { discarding, maxDiscard });
+    setSelection(result.selection);
+    setHint(result.hint ?? null);
+    play(result.hint ? 'error' : 'click');
+  };
+
+  const confirm = () => {
+    if (!selectedAction || disabled) {
+      return;
+    }
+    play(selectedAction.key.startsWith('take') ? 'take' : 'click');
+    onAction(selectedAction.key);
+    setSelection(emptySelection);
+    setHint(null);
+  };
+
+  const fly = (card: SplendorCard, source: HTMLElement) => {
+    const target = panelRef.current;
+    if (!target) {
+      return;
+    }
+    const from = source.getBoundingClientRect();
+    const to = target.getBoundingClientRect();
+    setFlight({ card, from, to });
+    window.setTimeout(() => setFlight(null), 480);
+  };
+
+  const buy = (card: SplendorCard, source: HTMLElement) => {
+    const key = `buy:${card.code}`;
+    if (disabled || !keys.has(key)) {
+      return;
+    }
+    play('buy');
+    fly(card, (source.closest('.card') as HTMLElement) ?? source);
+    onAction(key);
+  };
+
+  const reserve = (card: SplendorCard) => {
+    const key = `reserve:${card.code}`;
+    if (disabled || !keys.has(key)) {
+      return;
+    }
+    play('click');
+    onAction(key);
+  };
+
+  const deckReserve = (tier: number) => {
+    const key = `reserve:deck:${tier}`;
+    if (disabled || !keys.has(key)) {
+      return;
+    }
+    play('click');
+    onAction(key);
+  };
+
+  const chooseNoble = (code: string) => {
+    const key = `noble:${code}`;
+    if (disabled || !keys.has(key)) {
+      return;
+    }
+    play('buy');
+    onAction(key);
+  };
+
+  const status = disabled
+    ? '等待 AI 行动…'
+    : discarding
+      ? `宝石超过 10 个，请点自己的宝石弃掉 ${maxDiscard} 个`
+      : choosingNoble
+        ? '请选择一位贵族'
+        : '点宝石取牌，或点卡牌上的「购买 / 预留」';
 
   return (
     <div className="board">
-      <div className="board-top">
-        <div className="nobles">
-          {view.nobles.map((noble) => (
-            <div key={noble.code} className={noble.qualified ? 'noble qualified' : 'noble'}>
-              <NobleArt noble={noble} />
-            </div>
-          ))}
-          {view.finalRound && <div className="final-round">最后一轮</div>}
-        </div>
-        <div className="bank">
-          {GEMS.slice(0, 5).map((gem, index) => (
-            <div key={gem} className="bank-gem">
-              <svg viewBox="0 0 34 34" className="gem-badge">
-                <GemCircle gem={gem} x={17} y={17} r={15} uid={`bank-${gem}`} />
-              </svg>
-              <span>{view.bank[index]}</span>
-            </div>
-          ))}
-          <div className="bank-gem">
-            <svg viewBox="0 0 34 34" className="gem-badge">
-              <GemCircle gem="gold" x={17} y={17} r={15} uid="bank-gold" />
-            </svg>
-            <span>{view.goldBank}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="rows">
-        {view.rows.map((row) => (
-          <div className="row" key={row.tier}>
-            <div className="deck" title={`剩余 ${row.deckSize} 张`}>
-              <span>{row.deckSize}</span>
-              <small>{row.tier} 级</small>
-            </div>
-            <div className="row-cards">
-              {row.cards.map((card) => (
-                <div
-                  key={card.code}
-                  className={affordable.has(card.code) ? 'card affordable' : 'card'}
-                  title={card.code}
-                >
-                  <CardArt card={card} />
-                </div>
-              ))}
-            </div>
-          </div>
+      <div className="opponents">
+        {opponents.map((opponent) => (
+          <OpponentStrip key={opponent.seat} seat={opponent} index={opponent.seat} />
         ))}
       </div>
 
-      <div className="seats">
-        {opponents.map((seat) => (
-          <SeatPanel key={seat.seat} seat={seat} label={`对手 ${seat.seat + 1}`} />
-        ))}
-        <SeatPanel seat={mine} label="你" highlight />
+      <NoblesRow nobles={view.nobles} choosable={!disabled && choosingNoble} onChoose={chooseNoble} />
+
+      <CardRows
+        view={view}
+        seat={seat}
+        keys={keys}
+        disabled={disabled}
+        onBuy={buy}
+        onReserve={reserve}
+        onDeckReserve={deckReserve}
+      />
+
+      <GemBank
+        bank={view.bank}
+        goldBank={view.goldBank}
+        selected={selection.gems}
+        selectable={!disabled && !discarding && !choosingNoble}
+        onSelect={clickGem}
+      />
+
+      <div className="status-line">{status}</div>
+
+      <div className="selection-bar">
+        {selection.gems.length > 0 ? (
+          <>
+            <span className="selection-summary">
+              已选 {selection.gems.map((gem) => GEM_LABEL[gem] ?? gem).join(' + ')}
+            </span>
+            <button type="button" className="primary" disabled={!selectedAction || disabled} onClick={confirm}>
+              {selectedAction ? `确认：${selectedAction.label}` : '还不能确认'}
+            </button>
+            <button type="button" className="ghost" onClick={() => setSelection(emptySelection)}>
+              取消
+            </button>
+          </>
+        ) : (
+          <span className="hint">{discarding ? '点击下方自己的宝石选择要弃的' : '选中的宝石会显示在这里'}</span>
+        )}
+        {hint && <span className="hint error">{hint}</span>}
+        {keys.has('pass') && !disabled && (
+          <button type="button" className="ghost" onClick={() => onAction('pass')}>
+            跳过
+          </button>
+        )}
+        <button
+          type="button"
+          className="ghost sound-toggle"
+          onClick={() => {
+            setMuted(!muted);
+            setMutedState(!muted);
+          }}
+          title={muted ? '开启音效' : '关闭音效'}
+        >
+          {muted ? '音效关' : '音效开'}
+        </button>
       </div>
 
-      <div className="actions">
-        {GROUPS.map((group) => {
-          const items = actions.filter((action) =>
-            group.prefix === 'pass' ? !GROUPS.some((g) => g.prefix !== 'pass' && action.key.startsWith(g.prefix)) : action.key.startsWith(group.prefix),
-          );
-          if (items.length === 0) {
-            return null;
-          }
-          return (
-            <div className="action-group" key={group.title}>
-              <span className="action-title">{group.title}</span>
-              <div className="chips">
-                {items.map((action) => (
-                  <button
-                    key={action.key}
-                    type="button"
-                    className="chip"
-                    disabled={disabled}
-                    onClick={() => onAction(action.key)}
-                    title={action.key}
-                  >
-                    {action.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-        {actions.length === 0 && <div className="hint">等待对手行动…</div>}
+      <div ref={panelRef}>
+        <MyPanel
+          seat={seat}
+          label="你"
+          discarding={discarding && !disabled}
+          selectedGems={selection.gems}
+          onDiscardClick={clickGem}
+        />
       </div>
+
+      {flight && <FlyingCard flight={flight} />}
     </div>
   );
 }
 
-export function SeatPanel({
-  seat,
-  label,
-  highlight,
-}: {
-  seat: SplendorSeat;
-  label: string;
-  highlight?: boolean;
-}) {
+function FlyingCard({ flight }: { flight: Flight }) {
+  const [go, setGo] = useState(false);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setGo(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  const dx = flight.to.left + flight.to.width / 2 - (flight.from.left + flight.from.width / 2);
+  const dy = flight.to.top + 24 - (flight.from.top + flight.from.height / 2);
+
   return (
-    <div className={highlight ? 'seat-panel mine' : 'seat-panel'}>
-      <div className="seat-head">
-        <span className="seat-name">{label}</span>
-        <span className="seat-points">{seat.points} 分</span>
-        {seat.current && <span className="turn-dot" />}
-      </div>
-      <div className="seat-line">
-        {GEMS.slice(0, 5).map((gem, index) => (
-          <span key={`token-${gem}`} className="mini-token" style={{ background: GEM_COLOR[gem as Gem] }}>
-            {seat.tokens[index] > 0 ? seat.tokens[index] : ''}
-          </span>
-        ))}
-        <span className="mini-token gold" style={{ background: GEM_COLOR.gold }}>
-          {seat.tokens[5] > 0 ? seat.tokens[5] : ''}
-        </span>
-      </div>
-      <div className="seat-line">
-        {GEMS.slice(0, 5).map((gem, index) => (
-          <span key={`bonus-${gem}`} className="mini-bonus">
-            {GEM_LABEL[gem as Gem]}
-            {seat.bonuses[index]}
-          </span>
-        ))}
-        <span className="mini-bonus">卡 {seat.cards}</span>
-        <span className="mini-bonus">留 {seat.reservedCount}/3</span>
-      </div>
-      {seat.reserved.length > 0 && (
-        <div className="seat-reserved">
-          {seat.reserved.map((card) => (
-            <div key={card.code} className="reserved-card" title={`${card.tier} 级 ${card.bonus}`}>
-              <CardArt card={card} />
-            </div>
-          ))}
-        </div>
-      )}
+    <div
+      className="fly-card"
+      style={{
+        left: flight.from.left,
+        top: flight.from.top,
+        width: flight.from.width,
+        height: flight.from.height,
+        opacity: go ? 0 : 1,
+        transform: go ? `translate(${dx}px, ${dy}px) scale(0.35)` : 'none',
+      }}
+    >
+      <CardArt card={flight.card} />
     </div>
   );
 }

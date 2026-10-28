@@ -61,8 +61,9 @@ function GameView({ sessionId }: { sessionId: string }) {
       <footer className="game-foot">
         {fallbackArt > 0 && (
           <p className="art-hint">
-            当前是自绘卡面：没找到官方图。把图片按卡号放进 web/public/art-official/
-            {session.gameId}/ 后重新构建即可自动替换。
+            当前显示的是自绘卡面：没有找到官方图。在仓库根目录运行
+            <code> node tools/fetch-splendor-art.mjs </code>
+            抓取一次后重新构建即可换上官方卡面。
           </p>
         )}
         <div className="log">
