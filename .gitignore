@@ -1,0 +1,14 @@
+target/
+node_modules/
+dist/
+.tools/
+.vite/
+*.log
+
+# 官方插画/素材：只在本地存在，不进仓库（见 NOTICE.md）
+web/public/art-official/
+
+# IDE
+.idea/
+*.iml
+.vscode/

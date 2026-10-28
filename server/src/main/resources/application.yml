@@ -1,0 +1,9 @@
+server:
+  port: 8080
+
+boardgame:
+  session:
+    idle-timeout-minutes: 30
+  ai:
+    default-difficulty: NORMAL
+    worker-threads: 4
