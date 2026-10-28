@@ -1,38 +1,112 @@
+import { useId } from 'react';
 import { Art } from '../../components/Art';
 import { GEM_COLOR, GEM_LABEL, type Gem, type SplendorCard, type SplendorNoble } from '../../api/types';
 
 const TIER_COLOR: Record<number, string> = {
   1: '#4f9d69',
   2: '#c9a227',
-  3: '#4a6fb5',
+  3: '#5a7fc0',
 };
 
-export function GemDot({ gem, x, y, r }: { gem: string; x: number; y: number; r: number }) {
-  const color = GEM_COLOR[gem as Gem] ?? '#888';
+const GEM_LIGHT: Record<string, string> = {
+  white: '#fffdf6',
+  blue: '#8fc0f0',
+  green: '#8fd6a8',
+  red: '#f0968c',
+  black: '#6d6d7d',
+  gold: '#f3dd9a',
+};
+
+function safeId(raw: string): string {
+  return raw.replace(/[^a-zA-Z0-9_-]/g, '');
+}
+
+/** 一颗宝石：径向渐变 + 高光 + 文字，用来替代官方图标。 */
+export function GemCircle({
+  gem,
+  x,
+  y,
+  r,
+  uid,
+}: {
+  gem: string;
+  x: number;
+  y: number;
+  r: number;
+  uid: string;
+}) {
+  const base = GEM_COLOR[gem as Gem] ?? '#888';
+  const light = GEM_LIGHT[gem] ?? '#ddd';
+  const gradientId = `gem-${uid}`;
+  const label = GEM_LABEL[gem as Gem] ?? gem;
+
   return (
     <g>
-      <circle cx={x} cy={y} r={r} fill={color} stroke="rgba(0,0,0,0.45)" strokeWidth={1.5} />
-      <text x={x} y={y + r * 0.36} textAnchor="middle" fontSize={r * 0.95} fill={gem === 'white' ? '#2a2a33' : '#fff'}>
-        {GEM_LABEL[gem as Gem] ?? gem}
+      <defs>
+        <radialGradient id={gradientId} cx="35%" cy="28%" r="80%">
+          <stop offset="0%" stopColor={light} />
+          <stop offset="65%" stopColor={base} />
+          <stop offset="100%" stopColor={base} />
+        </radialGradient>
+      </defs>
+      <circle cx={x} cy={y} r={r} fill={`url(#${gradientId})`} stroke="rgba(0,0,0,0.45)" strokeWidth={1.2} />
+      <ellipse
+        cx={x - r * 0.28}
+        cy={y - r * 0.34}
+        rx={r * 0.34}
+        ry={r * 0.2}
+        fill="rgba(255,255,255,0.4)"
+      />
+      <text
+        x={x}
+        y={y + r * 0.33}
+        textAnchor="middle"
+        fontSize={r * 0.95}
+        fontWeight={600}
+        fill={gem === 'white' || gem === 'gold' ? '#2b2415' : '#fff'}
+      >
+        {label}
       </text>
     </g>
   );
 }
 
+/** 自绘卡面：等级色边框、分数角标、宝石与费用。 */
 export function CardFace({ card }: { card: SplendorCard }) {
+  const uid = safeId(useId());
   const accent = TIER_COLOR[card.tier] ?? '#888';
   const cost = Object.entries(card.cost);
+
   return (
-    <svg className="card-face" viewBox="0 0 96 132" role="img" aria-label={`${card.tier} 级卡`}>
-      <rect x="2" y="2" width="92" height="128" rx="8" fill="#1b2030" stroke={accent} strokeWidth="2.5" />
-      <text x="10" y="28" fontSize="18" fontWeight="700" fill="#f2e6c8">
-        {card.points > 0 ? card.points : ''}
+    <svg className="card-face" viewBox="0 0 96 140" role="img" aria-label={`${card.tier} 级卡`}>
+      <defs>
+        <linearGradient id={`bg-${uid}`} x1="0" y1="0" x2="0.6" y2="1">
+          <stop offset="0%" stopColor="#242b3c" />
+          <stop offset="100%" stopColor="#12151f" />
+        </linearGradient>
+      </defs>
+      <rect x="2" y="2" width="92" height="136" rx="9" fill={`url(#bg-${uid})`} stroke={accent} strokeWidth="2.5" />
+      <rect x="6" y="6" width="84" height="128" rx="6" fill="none" stroke="rgba(255,255,255,0.06)" />
+
+      {card.points > 0 && (
+        <g>
+          <circle cx="17" cy="19" r="11" fill="#f0e2b8" stroke="#8a7745" strokeWidth="1" />
+          <text x="17" y="24" textAnchor="middle" fontSize="13" fontWeight={700} fill="#3a2f14">
+            {card.points}
+          </text>
+        </g>
+      )}
+
+      <GemCircle gem={card.bonus} x={48} y={62} r={22} uid={`${uid}-bonus`} />
+
+      <text x="48" y="96" textAnchor="middle" fontSize="8" letterSpacing="1.5" fill="#8e97ab">
+        TIER {card.tier}
       </text>
-      <GemDot gem={card.bonus} x={48} y={58} r={20} />
+
       {cost.map(([gem, amount], index) => (
         <g key={gem}>
-          <GemDot gem={gem} x={14 + index * 22} y={108} r={9} />
-          <text x={14 + index * 22} y={124} textAnchor="middle" fontSize={9} fill="#cfd6e4">
+          <GemCircle gem={gem} x={16 + index * 21} y={116} r={8.5} uid={`${uid}-c${index}`} />
+          <text x={16 + index * 21} y={134} textAnchor="middle" fontSize="9" fill="#cfd6e4">
             {amount}
           </text>
         </g>
@@ -41,23 +115,35 @@ export function CardFace({ card }: { card: SplendorCard }) {
   );
 }
 
+/** 自绘贵族：金色六边形 + 需求宝石。 */
 export function NobleTile({ noble }: { noble: SplendorNoble }) {
+  const uid = safeId(useId());
   const requirement = Object.entries(noble.requirement);
+
   return (
-    <svg className="noble-tile" viewBox="0 0 76 76" role="img" aria-label={`贵族 ${noble.code}`}>
+    <svg className="noble-tile" viewBox="0 0 76 78" role="img" aria-label={`贵族 ${noble.code}`}>
+      <defs>
+        <linearGradient id={`noble-${uid}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={noble.qualified ? '#463a22' : '#242938'} />
+          <stop offset="100%" stopColor={noble.qualified ? '#241d10' : '#151922'} />
+        </linearGradient>
+      </defs>
       <polygon
-        points="38,3 72,21 72,55 38,73 4,55 4,21"
-        fill={noble.qualified ? '#3a3226' : '#232734'}
-        stroke={noble.qualified ? '#d8b23c' : '#4a5064'}
+        points="38,3 72,21 72,57 38,75 4,57 4,21"
+        fill={`url(#noble-${uid})`}
+        stroke={noble.qualified ? '#e0bb55' : '#4a5064'}
         strokeWidth="2"
       />
-      <text x="38" y="26" textAnchor="middle" fontSize="12" fill="#e8dcc0">
+      <text x="38" y="24" textAnchor="middle" fontSize="10" letterSpacing="1" fill="#e8dcc0">
         贵族
+      </text>
+      <text x="38" y="36" textAnchor="middle" fontSize="8" fill="#8e97ab">
+        3 分
       </text>
       {requirement.map(([gem, amount], index) => (
         <g key={gem}>
-          <GemDot gem={gem} x={18 + index * 19} y={48} r={8} />
-          <text x={18 + index * 19} y={66} textAnchor="middle" fontSize={8} fill="#cfd6e4">
+          <GemCircle gem={gem} x={16 + index * 22} y={52} r={7.5} uid={`${uid}-r${index}`} />
+          <text x={16 + index * 22} y={70} textAnchor="middle" fontSize="8" fill="#cfd6e4">
             {amount}
           </text>
         </g>
@@ -68,17 +154,10 @@ export function NobleTile({ noble }: { noble: SplendorNoble }) {
 
 export function CardArt({ card }: { card: SplendorCard }) {
   return (
-    <Art
-      game="splendor"
-      name={card.code}
-      alt={`${card.tier} 级卡`}
-      fallback={<CardFace card={card} />}
-    />
+    <Art game="splendor" name={card.code} alt={`${card.tier} 级卡`} fallback={<CardFace card={card} />} />
   );
 }
 
 export function NobleArt({ noble }: { noble: SplendorNoble }) {
-  return (
-    <Art game="splendor" name={`noble-${noble.code}`} alt="贵族" fallback={<NobleTile noble={noble} />} />
-  );
+  return <Art game="splendor" name={`noble-${noble.code}`} alt="贵族" fallback={<NobleTile noble={noble} />} />;
 }

@@ -7,7 +7,7 @@ import {
   type SplendorSeat,
   type SplendorView,
 } from '../../api/types';
-import { CardArt, GemDot, NobleArt } from './art';
+import { CardArt, GemCircle, NobleArt } from './art';
 
 interface Props {
   view: SplendorView;
@@ -48,14 +48,14 @@ export function SplendorBoard({ view, mySeat, actions, disabled, onAction }: Pro
           {GEMS.slice(0, 5).map((gem, index) => (
             <div key={gem} className="bank-gem">
               <svg viewBox="0 0 34 34" className="gem-badge">
-                <GemDot gem={gem} x={17} y={17} r={15} />
+                <GemCircle gem={gem} x={17} y={17} r={15} uid={`bank-${gem}`} />
               </svg>
               <span>{view.bank[index]}</span>
             </div>
           ))}
           <div className="bank-gem">
             <svg viewBox="0 0 34 34" className="gem-badge">
-              <GemDot gem="gold" x={17} y={17} r={15} />
+              <GemCircle gem="gold" x={17} y={17} r={15} uid="bank-gold" />
             </svg>
             <span>{view.goldBank}</span>
           </div>

@@ -1,6 +1,7 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSession } from '../hooks/useSession';
 import { boardFor } from '../games/registry';
+import { useArtFallbackCount } from '../components/Art';
 
 export function GamePage() {
   const [params] = useSearchParams();
@@ -19,6 +20,7 @@ export function GamePage() {
 
 function GameView({ sessionId }: { sessionId: string }) {
   const { session, error, act } = useSession(sessionId);
+  const fallbackArt = useArtFallbackCount();
 
   if (!session) {
     return (
@@ -57,6 +59,12 @@ function GameView({ sessionId }: { sessionId: string }) {
       )}
 
       <footer className="game-foot">
+        {fallbackArt > 0 && (
+          <p className="art-hint">
+            当前是自绘卡面：没找到官方图。把图片按卡号放进 web/public/art-official/
+            {session.gameId}/ 后重新构建即可自动替换。
+          </p>
+        )}
         <div className="log">
           {recent.map((item) => (
             <div key={`${item.version}-${item.at}`} className="log-line">

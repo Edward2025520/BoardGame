@@ -107,7 +107,15 @@ cd web && npm run typecheck
 
 - 仓库里只有自绘的 SVG 图形（`web/src/games/*/art.tsx`）。
 - 官方插画不随仓库分发。想用官方图，把图片放到 `web/public/art-official/<游戏>/<卡号>.png`，
-  页面会优先加载它，找不到再退回自绘。这个目录已在 `.gitignore` 里。
+  页面会优先加载它（依次尝试 png / jpg / webp），找不到再退回自绘。这个目录已在 `.gitignore` 里。
+- 文件名要和卡号一致，例如 `3g2B.png`、`noble-4g4r.jpg`。批量导入：
+
+  ```bash
+  node web/scripts/import-art.mjs "D:/下载的卡面" --game splendor
+  ```
+
+  脚本会按卡号重命名、拷贝，并列出还缺哪些、哪些文件名对不上。
+- 页脚会在用自绘卡面时给出提示，方便确认官方图到底有没有生效。
 - 《璀璨宝石》《花砖物语》的名称、规则与美术归原作者与出版社所有，本项目是非商业的学习作品。
 
 ## 目录

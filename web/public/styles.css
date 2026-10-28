@@ -456,6 +456,13 @@ img.art {
   margin-top: 16px;
 }
 
+.art-hint {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 .log {
   background: var(--panel);
   border: 1px solid var(--line);

@@ -1,7 +1,7 @@
 // 备用构建：不依赖 Vite/esbuild（它们需要 spawn 子进程，在受限环境里会被拒绝）。
 // 用 TypeScript 的 transpileModule 逐文件转译，再用 Rollup 打包成单个 ESM 文件。
 // 用法：node scripts/build-fallback.mjs
-import { existsSync, mkdirSync, readFileSync, readdirSync, copyFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, cpSync, writeFileSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { rollup } from 'rollup';
 import nodeResolve from '@rollup/plugin-node-resolve';
@@ -52,6 +52,7 @@ const bundle = await rollup({
   ],
 });
 
+rmSync(outDir, { recursive: true, force: true });
 mkdirSync(join(outDir, 'assets'), { recursive: true });
 await bundle.write({ file: join(outDir, 'assets/app.js'), format: 'esm', sourcemap: false });
 
@@ -61,7 +62,7 @@ if (existsSync(publicDir)) {
     if (entry === 'index.html') {
       continue;
     }
-    copyFileSync(join(publicDir, entry), join(outDir, entry));
+    cpSync(join(publicDir, entry), join(outDir, entry), { recursive: true });
   }
 }
 
