@@ -501,15 +501,15 @@ public final class SplendorDefinition implements GameDefinition<SplendorState, S
     public SplendorView view(SplendorState state, int seat) {
         List<SeatView> seats = new ArrayList<>(state.playerCount());
         for (int i = 0; i < state.playerCount(); i++) {
-            List<CardView> mine = new ArrayList<>();
-            if (i == seat) {
-                for (Card card : state.reserved().get(i)) {
-                    mine.add(cardView(card));
-                }
+            // 单人版：所有座位的预留卡都返回，方便玩家看清 AI 手里有什么；
+            // 以后做联机时需要按座位重新裁剪。
+            List<CardView> reserved = new ArrayList<>();
+            for (Card card : state.reserved().get(i)) {
+                reserved.add(cardView(card));
             }
             seats.add(new SeatView(i, state.points()[i], state.cards()[i],
                     state.tokens()[i].clone(), state.bonuses()[i].clone(),
-                    state.reserved().get(i).size(), mine, i == state.currentSeat()));
+                    state.reserved().get(i).size(), reserved, i == state.currentSeat()));
         }
 
         List<RowView> rows = new ArrayList<>(3);

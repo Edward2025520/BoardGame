@@ -33,6 +33,13 @@ export function SplendorBoard({ view, mySeat, actions, log, disabled, onAction }
   const [selection, setSelection] = useState<Selection>(emptySelection);
   const [hint, setHint] = useState<string | null>(null);
   const [flight, setFlight] = useState<Flight | null>(null);
+  const [revealReserved, setRevealReserved] = useState(() => {
+    try {
+      return localStorage.getItem('boardgame.revealReserved') !== '0';
+    } catch {
+      return true;
+    }
+  });
   const panelRef = useRef<HTMLDivElement | null>(null);
 
   // 每次局面更新都清空选择，避免拿着上一手的选中状态误操作
@@ -53,6 +60,16 @@ export function SplendorBoard({ view, mySeat, actions, log, disabled, onAction }
   opponents.forEach((opponent, index) => labelBySeat.set(opponent.seat, `AI ${index + 1}`));
   const labelFor = (seatNumber: number) =>
     seatNumber === mySeat ? '你' : (labelBySeat.get(seatNumber) ?? 'AI');
+
+  const toggleReserved = () => {
+    const next = !revealReserved;
+    setRevealReserved(next);
+    try {
+      localStorage.setItem('boardgame.revealReserved', next ? '1' : '0');
+    } catch {
+      // 忽略隐私模式下的写入失败
+    }
+  };
   // 官方摆法：3 级在上，1 级在下
   const orderedRows = useMemo(() => [...view.rows].sort((left, right) => right.tier - left.tier), [view.rows]);
 
@@ -193,12 +210,19 @@ export function SplendorBoard({ view, mySeat, actions, log, disabled, onAction }
       </div>
 
       <aside className="board-rail">
+        <div className="rail-head">
+          <span>对手</span>
+          <button type="button" className="ghost tiny" onClick={toggleReserved}>
+            {revealReserved ? '隐藏预留' : '显示预留'}
+          </button>
+        </div>
         <div className="rail-opponents">
           {opponents.map((opponent) => (
             <OpponentStrip
               key={opponent.seat}
               seat={opponent}
               label={labelBySeat.get(opponent.seat) ?? 'AI'}
+              showReserved={revealReserved}
             />
           ))}
         </div>

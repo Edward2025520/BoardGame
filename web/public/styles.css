@@ -825,6 +825,33 @@ img.art {
   gap: 8px;
 }
 
+.rail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 0 2px;
+}
+
+.ghost.tiny {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.opponent-reserved {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.reserved-mini {
+  width: 36px;
+  border-radius: 4px;
+  overflow: hidden;
+  opacity: 0.92;
+}
+
 .opponent {
   flex: none;
   display: block;

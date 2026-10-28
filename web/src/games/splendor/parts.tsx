@@ -16,7 +16,15 @@ export function Avatar({ label, mine }: { label: string; mine?: boolean }) {
   return <span className={mine ? 'avatar mine' : 'avatar'}>{label.slice(0, 1)}</span>;
 }
 
-export function OpponentStrip({ seat, label }: { seat: SplendorSeat; label: string }) {
+export function OpponentStrip({
+  seat,
+  label,
+  showReserved,
+}: {
+  seat: SplendorSeat;
+  label: string;
+  showReserved: boolean;
+}) {
   return (
     <div className={seat.current ? 'opponent current' : 'opponent'}>
       <div className="opponent-head">
@@ -42,6 +50,19 @@ export function OpponentStrip({ seat, label }: { seat: SplendorSeat; label: stri
         <span className="bonus-chip">留 {seat.reservedCount}/3</span>
         <span className="bonus-chip">{seat.cards} 卡</span>
       </div>
+      {showReserved && seat.reserved.length > 0 && (
+        <div className="opponent-reserved">
+          {seat.reserved.map((card) => (
+            <div
+              key={card.code}
+              className="reserved-mini"
+              title={`预留：${card.tier} 级 ${card.bonus} 卡，${card.points} 分`}
+            >
+              <CardArt card={card} />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

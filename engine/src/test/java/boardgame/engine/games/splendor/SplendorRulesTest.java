@@ -133,8 +133,8 @@ class SplendorRulesTest {
     }
 
     @Test
-    @DisplayName("盲抽预留不暴露卡号，对手视图看不到预留卡面")
-    void blindReserveIsHidden() {
+    @DisplayName("盲抽预留的牌离开牌堆，所有座位视图都能看到（单人版便于查看 AI）")
+    void blindReserveIsVisibleInSinglePlayer() {
         SplendorState state = builder().deck(0, card("1g1w1r1b"), card("2g2B")).build();
 
         SplendorState next = game.apply(state, new SplendorAction.ReserveCard(1, false, null));
@@ -143,8 +143,9 @@ class SplendorRulesTest {
         SplendorView mine = game.view(next, 0);
         SplendorView theirs = game.view(next, 1);
         assertEquals(1, mine.seats().get(0).reserved().size());
-        assertTrue(theirs.seats().get(0).reserved().isEmpty());
+        assertEquals(1, theirs.seats().get(0).reserved().size());
         assertEquals(1, theirs.seats().get(0).reservedCount());
+        assertEquals(1, next.decks().get(0).size(), "牌堆要少一张");
     }
 
     @Test
