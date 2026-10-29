@@ -122,6 +122,26 @@ class SplendorRulesTest {
     }
 
     @Test
+    @DisplayName("预留的卡买得起时能直接购买")
+    void buyReservedCard() {
+        Card card = card("3g");
+        SplendorState state = builder()
+                .reserved(0, card)
+                .tokens(0, Gem.GREEN, 3)
+                .build();
+
+        List<String> keys = game.legalActions(state).stream().map(action -> action.key()).toList();
+        assertTrue(keys.contains("buy:3g"), "预留卡应出现在可买动作里，实际: " + keys);
+
+        SplendorState next = game.apply(state, new SplendorAction.BuyCard(card));
+
+        assertTrue(next.reserved().get(0).isEmpty(), "买完要从预留区移除");
+        assertEquals(1, next.purchased().get(0).size());
+        assertEquals(0, next.tokensOf(0, Gem.GREEN));
+        assertEquals(1, next.bonusOf(0, Gem.BLACK));
+    }
+
+    @Test
     @DisplayName("预留场上卡会补一张新卡并拿一个黄金")
     void reserveFromRowGivesGold() {
         Card card = card("1g1w1r1b");
@@ -362,6 +382,11 @@ class SplendorRulesTest {
 
         StateBuilder deck(int tier, Card... value) {
             decks.get(tier).addAll(Arrays.asList(value));
+            return this;
+        }
+
+        StateBuilder reserved(int player, Card... value) {
+            reserved.get(player).addAll(Arrays.asList(value));
             return this;
         }
 

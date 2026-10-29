@@ -71,6 +71,8 @@ function seat(index, current, reserved = [], tokens = [0, 0, 0, 0, 0, 0]) {
 }
 
 const reservedCard = { code: '3r1B1g', tier: 1, points: 0, bonus: 'red', cost: { red: 3, black: 1, green: 1 } };
+const reservedAffordable = { code: '4g', tier: 1, points: 1, bonus: 'green', cost: { green: 4 } };
+const reservedShort = { code: '2g2B', tier: 2, points: 0, bonus: 'blue', cost: { green: 2, black: 2 } };
 
 const view = {
   playerCount: 4,
@@ -80,7 +82,12 @@ const view = {
   bank: [4, 4, 4, 4, 4],
   goldBank: 5,
   reservedLimit: 3,
-  seats: [seat(0, true, [], [0, 0, 4, 0, 0, 0]), seat(1, false, [reservedCard]), seat(2, false), seat(3, false)],
+  seats: [
+    seat(0, true, [reservedAffordable, reservedShort], [0, 0, 4, 0, 0, 0]),
+    seat(1, false, [reservedCard]),
+    seat(2, false),
+    seat(3, false),
+  ],
   rows: [
     {
       tier: 1,
@@ -125,6 +132,9 @@ check('四人牌桌', boardHtml, [
   '实付',
   '永久折扣',
   '已购 0 张',
+  'buy-reserved',
+  '实付 4绿',
+  '还缺 2黑',
   '隐藏预留',
   '预留：1 级 red 卡',
 ]);

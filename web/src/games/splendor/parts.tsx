@@ -346,13 +346,21 @@ export function MyPanel({
   label,
   discarding,
   selectedGems,
+  keys,
+  disabled,
+  hintKey,
   onDiscardClick,
+  onBuy,
 }: {
   seat: SplendorSeat;
   label: string;
   discarding: boolean;
   selectedGems: Gem[];
+  keys: Set<string>;
+  disabled: boolean;
+  hintKey?: string | null;
   onDiscardClick: (gem: Gem) => void;
+  onBuy: (card: SplendorCard, source: HTMLElement) => void;
 }) {
   const [showPurchased, setShowPurchased] = useState(false);
   const bonusPips: GemCount[] = seat.bonuses
@@ -432,11 +440,29 @@ export function MyPanel({
       </div>
       {seat.reserved.length > 0 && (
         <div className="my-reserved">
-          {seat.reserved.map((card) => (
-            <div key={card.code} className="reserved-card" title={paymentSummary(card, seat)}>
-              <CardArt card={card} />
-            </div>
-          ))}
+          {seat.reserved.map((card) => {
+            const canBuy = keys.has(`buy:${card.code}`);
+            const hinted = hintKey === `buy:${card.code}`;
+            const summary = paymentSummary(card, seat);
+            return (
+              <div
+                key={card.code}
+                className={hinted ? 'reserved-card hinted' : 'reserved-card'}
+                title={`预留：${card.tier} 级 ${GEM_LABEL[card.bonus as Gem] ?? card.bonus}卡，${summary}`}
+              >
+                <CardArt card={card} />
+                <button
+                  type="button"
+                  className="buy-reserved"
+                  disabled={disabled || !canBuy}
+                  onClick={(event) => onBuy(card, event.currentTarget)}
+                >
+                  购买
+                </button>
+                <span className={canBuy ? 'reserved-status ok' : 'reserved-status'}>{summary}</span>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

@@ -143,6 +143,17 @@ export function SplendorBoard({ view, mySeat, actions, log, hintKey, disabled, o
     onAction(key);
   };
 
+  /** 预留卡就在我的面板里，买它不做飞卡动画。 */
+  const buyReserved = (card: SplendorCard) => {
+    const key = `buy:${card.code}`;
+    if (disabled || !keys.has(key)) {
+      return;
+    }
+    play('buy');
+    setSelection(emptySelection);
+    onAction(key);
+  };
+
   const reserve = (card: SplendorCard) => {
     const key = `reserve:${card.code}`;
     if (disabled || !keys.has(key)) {
@@ -236,7 +247,11 @@ export function SplendorBoard({ view, mySeat, actions, log, hintKey, disabled, o
             label="你"
             discarding={discarding && !disabled}
             selectedGems={selection.gems}
+            keys={keys}
+            disabled={disabled}
+            hintKey={hintKey}
             onDiscardClick={clickGem}
+            onBuy={buyReserved}
           />
         </div>
       </div>
