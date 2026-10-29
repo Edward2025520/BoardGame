@@ -4,11 +4,12 @@ import boardgame.engine.core.Action;
 import boardgame.engine.core.GameAdapter;
 import boardgame.engine.core.GameOutcome;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
-import java.util.TreeMap;
 
 /**
  * 单机 AI 的通用搜索层。
@@ -32,57 +33,79 @@ public final class MctsSearch implements SearchStrategy {
 
     @Override
     public Optional<Action> chooseMove(Object rootState, int seat, SearchBudget budget) {
+        return Optional.ofNullable(chooseWithStats(rootState, seat, budget).action());
+    }
+
+    /** 与 {@link #chooseMove} 同样的搜索，额外返回根节点每个动作的访问数与均值，供教练与复盘使用。 */
+    public SearchResult chooseWithStats(Object rootState, int seat, SearchBudget budget) {
         List<Action> rootActions = game.legalActions(rootState);
         if (rootActions.isEmpty()) {
-            return Optional.empty();
+            return new SearchResult(null, List.of());
         }
         if (rootActions.size() == 1) {
-            return Optional.of(rootActions.get(0));
+            Action only = rootActions.get(0);
+            return new SearchResult(only, List.of(new SearchResult.ActionStat(only.key(), 1, 1.0)));
         }
 
         long totalMs = Math.max(4, budget.timeMs());
         int worlds = (int) Math.max(1, Math.min(8, totalMs / 120));
         long perWorldNs = totalMs * 1_000_000L / worlds;
 
-        Map<String, Integer> votes = new TreeMap<>();
-        Map<String, Double> weight = new TreeMap<>();
+        Map<String, Integer> votes = new HashMap<>();
+        Map<String, Double> voteWeight = new HashMap<>();
+        Map<String, Integer> visitsByKey = new HashMap<>();
+        Map<String, Double> totalByKey = new HashMap<>();
         Action fallback = rootActions.get(rng.nextInt(rootActions.size()));
 
-        for (int w = 0; w < worlds; w++) {
-            Object world = game.determinize(rootState, rng, seat);
-            Node root = newNode(world, seat, null, null);
+        for (int world = 0; world < worlds; world++) {
+            Object sampled = game.determinize(rootState, rng, seat);
+            Node root = newNode(sampled, seat, null, null);
             long deadline = System.nanoTime() + perWorldNs;
             int iterations = 0;
             while (System.nanoTime() < deadline && iterations < 200_000) {
                 iterate(root, seat);
                 iterations++;
             }
+            for (Node child : root.children) {
+                visitsByKey.merge(child.action.key(), child.visits, Integer::sum);
+                totalByKey.merge(child.action.key(), child.total, Double::sum);
+            }
             Node best = bestByVisits(root);
             Action chosen = best == null ? fallback : best.action;
             votes.merge(chosen.key(), 1, Integer::sum);
-            weight.merge(chosen.key(), (double) (best == null ? 0 : best.visits), Double::sum);
+            voteWeight.merge(chosen.key(), (double) (best == null ? 0 : best.visits), Double::sum);
         }
 
         String winner = null;
         int bestVotes = -1;
         double bestWeight = -1;
         for (Map.Entry<String, Integer> entry : votes.entrySet()) {
-            double w = weight.getOrDefault(entry.getKey(), 0d);
-            if (entry.getValue() > bestVotes || (entry.getValue() == bestVotes && w > bestWeight)) {
+            double weight = voteWeight.getOrDefault(entry.getKey(), 0d);
+            if (entry.getValue() > bestVotes || (entry.getValue() == bestVotes && weight > bestWeight)) {
                 winner = entry.getKey();
                 bestVotes = entry.getValue();
-                bestWeight = w;
+                bestWeight = weight;
             }
         }
-        if (winner == null) {
-            return Optional.of(fallback);
-        }
+
+        Map<String, SearchResult.ActionStat> stats = new LinkedHashMap<>();
         for (Action action : rootActions) {
-            if (action.key().equals(winner)) {
-                return Optional.of(action);
+            int visits = visitsByKey.getOrDefault(action.key(), 0);
+            double total = totalByKey.getOrDefault(action.key(), 0d);
+            stats.put(action.key(), new SearchResult.ActionStat(action.key(), visits,
+                    visits == 0 ? 0d : total / visits));
+        }
+
+        Action chosen = fallback;
+        if (winner != null) {
+            for (Action action : rootActions) {
+                if (action.key().equals(winner)) {
+                    chosen = action;
+                    break;
+                }
             }
         }
-        return Optional.of(fallback);
+        return new SearchResult(chosen, new ArrayList<>(stats.values()));
     }
 
     private void iterate(Node root, int seat) {
@@ -133,7 +156,10 @@ public final class MctsSearch implements SearchStrategy {
             if (actions.isEmpty()) {
                 break;
             }
-            state = game.apply(state, actions.get(rng.nextInt(actions.size())));
+            int actor = game.currentSeat(state);
+            List<Action> candidates = game.rolloutActions(state, actions, actor, rng);
+            List<Action> pool = candidates.isEmpty() ? actions : candidates;
+            state = game.apply(state, pool.get(rng.nextInt(pool.size())));
         }
         return state;
     }

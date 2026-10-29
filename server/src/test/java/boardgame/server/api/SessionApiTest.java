@@ -131,6 +131,78 @@ class SessionApiTest {
         org.junit.jupiter.api.Assertions.assertEquals(0, latest.get("currentSeat").asInt());
     }
 
+    @Test
+    @DisplayName("对局中可以把难度改成七档里的任意一档")
+    void changeDifficultyMidGame() throws Exception {
+        JsonNode created = createSession(2, "[0,1]", "MEDIUM");
+        String sessionId = created.get("sessionId").asText();
+
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .patch("/api/sessions/" + sessionId + "/difficulty")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"difficulty\":\"HELL\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.difficulty").value("HELL"))
+                .andExpect(jsonPath("$.difficultyLabel").value("七档 · 地狱"));
+    }
+
+    @Test
+    @DisplayName("悔棋回到人类回合，版本号继续递增")
+    void undoRestoresHumanTurn() throws Exception {
+        JsonNode created = createSession(2, "[0,1]", "MEDIUM");
+        String sessionId = created.get("sessionId").asText();
+        int before = created.get("version").asInt();
+
+        postAction(sessionId, created.get("legalActions").get(0).get("key").asText(), before, 202);
+
+        MvcResult result = mvc.perform(
+                        org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                .post("/api/sessions/" + sessionId + "/undo"))
+                .andExpect(status().isAccepted())
+                .andReturn();
+        JsonNode after = mapper.readTree(result.getResponse().getContentAsString());
+
+        org.junit.jupiter.api.Assertions.assertEquals(0, after.get("currentSeat").asInt());
+        org.junit.jupiter.api.Assertions.assertTrue(after.get("version").asInt() > before);
+        org.junit.jupiter.api.Assertions.assertTrue(after.get("log").get(after.get("log").size() - 1)
+                .get("text").asText().contains("悔棋"));
+    }
+
+    @Test
+    @DisplayName("没有可悔的步骤时返回 409")
+    void undoWithoutHistoryConflicts() throws Exception {
+        JsonNode created = createSession(2, "[0,1]", "MEDIUM");
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .post("/api/sessions/" + created.get("sessionId").asText() + "/undo"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    @DisplayName("轮到人类时可以要教练建议")
+    void hintReturnsLegalAction() throws Exception {
+        JsonNode created = createSession(2, "[0,1]", "MEDIUM");
+        String sessionId = created.get("sessionId").asText();
+
+        MvcResult result = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .post("/api/sessions/" + sessionId + "/hint"))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode hint = mapper.readTree(result.getResponse().getContentAsString());
+
+        java.util.List<String> keys = new java.util.ArrayList<>();
+        created.get("legalActions").forEach(action -> keys.add(action.get("key").asText()));
+        org.junit.jupiter.api.Assertions.assertTrue(keys.contains(hint.get("actionKey").asText()),
+                "教练给的动作必须合法");
+    }
+
+    @Test
+    @DisplayName("对局没结束时不能复盘")
+    void reviewBeforeFinishConflicts() throws Exception {
+        JsonNode created = createSession(2, "[0,1]", "MEDIUM");
+        mvc.perform(get("/api/sessions/" + created.get("sessionId").asText() + "/review"))
+                .andExpect(status().isConflict());
+    }
+
     private JsonNode createSession(int seats, String humanSeats, String difficulty) throws Exception {
         String body = mapper.writeValueAsString(Map.of(
                 "gameId", "splendor",

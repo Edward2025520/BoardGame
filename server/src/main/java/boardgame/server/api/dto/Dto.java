@@ -36,9 +36,12 @@ public final class Dto {
             String phase,
             boolean finished,
             String difficulty,
+            String difficultyLabel,
             List<Integer> humanSeats,
             List<SeatInfo> seats,
             boolean aiThinking,
+            boolean canUndo,
+            boolean reviewable,
             java.util.Map<Integer, Object> boards,
             List<ActionOption> legalActions,
             List<LogItem> log,
@@ -46,5 +49,20 @@ public final class Dto {
     }
 
     public record OutcomeDto(int[] points, List<Integer> winners) {
+    }
+
+    public record DifficultyRequest(String difficulty) {
+    }
+
+    public record HintDto(String actionKey, String label) {
+    }
+
+    public record ReviewItemDto(int index, String label) {
+    }
+
+    public record ReviewListDto(int total, List<ReviewItemDto> items) {
+    }
+
+    public record ReviewMoveDto(int index, String chosenLabel, String bestLabel, double delta) {
     }
 }

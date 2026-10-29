@@ -73,11 +73,13 @@ java -jar server/target/boardgame.jar
 
 ## 操作
 
-- 大厅先选人数（2/3/4 人 = 你 + 1～3 个 AI）和难度。
+- 大厅先选人数（2/3/4 人 = 你 + 1～3 个 AI）和难度，局内还能用顶部下拉随时换档。
 - 点宝石图标选中，再点一次取消；凑成「3 种不同颜色」或「2 个同色」后点「确认」提交。
 - 卡牌下方直接有「购买 / 预留」；牌堆可点「盲抽」，拿一张卡和一个黄金。
 - 宝石超过 10 个时回合会停在弃牌阶段，点自己面板里的宝石弃到 10 个。
 - 同时满足多个贵族时，点贵族牌选择。
+- 卡住时点「支一招」，AI 算 1.5 秒给出建议并高亮目标；点错了点「悔棋」回到上一手（会撤销 AI 的应手）。
+- 终局后点「教练复盘」，逐手分析并列出最亏的 3 手。
 - 左侧是牌桌（3 级在上、1 级在下），右侧是 AI 状态与对局记录。
 - 右栏会直接显示 AI 预留的卡面，点「隐藏预留」可关掉。这是单人版的有意放宽，联机版需要重新裁剪这部分。
 - 右上角「音效」可调音量与静音，设置会记住。
@@ -85,21 +87,29 @@ java -jar server/target/boardgame.jar
 ## AI 是怎么做的
 
 - 通用层 `engine/ai`：`MctsSearch` 对隐藏信息做多次确定性采样，每个世界跑一棵 UCT 树，再按各世界的选择投票。
-- 难度只调预算与失误率，不改规则：
+- 七档难度只调预算与失误率，不改规则（照搬 shanzhai-splendor 的梯度）：
 
-| 难度 | 预算 | 失误率 |
+| 档位 | 预算 | 失误率 |
 |---|---|---|
-| EASY | 贪心 | 25% |
-| NORMAL | 800ms | 8% |
-| HARD | 2.5s | 0 |
-| EXPERT | 6s | 0 |
+| 一档 · 入门 | 贪心 | 0 |
+| 二档 · 简单 | 200ms | 40% |
+| 三档 · 进阶 | 500ms | 18% |
+| 四档 · 中等 | 1000ms | 0 |
+| 五档 · 困难 | 2000ms | 0 |
+| 六档 · 大师 | 4000ms | 0 |
+| 七档 · 地狱 | 8000ms | 0 |
 
-- 新游戏只需实现 `GameDefinition`，并可选地给一个 `heuristic`，就能直接继承这套 AI。
+- 模拟（rollout）不是纯随机：璀璨宝石里会优先走「买得起且分数最高的卡」，其余 20% 保持随机。
+  评测对比（150ms 预算、各 4 局）：开启后 MCTS 对贪心 4:0、均分 13.0:8.8；关闭后 3:1、14.3:10.5。
+  样本很小，只用来确认没有退化，不当作强度结论。
+- 新游戏只需实现 `GameDefinition`，并可选地给 `heuristic` 与 `rolloutActions`，就能直接继承这套 AI。
 
 命令行棋力评测：
 
 ```bash
-java -cp engine/target/classes boardgame.engine.tools.SplendorEval 40
+java -cp engine/target/classes boardgame.engine.tools.SplendorEval 40 --mcts
+# 关掉启发式 rollout 做对比
+java -Dboardgame.rollout=false -cp engine/target/classes boardgame.engine.tools.SplendorEval 40 --mcts
 ```
 
 ## 加一款新游戏

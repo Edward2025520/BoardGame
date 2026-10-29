@@ -58,8 +58,8 @@ class AzulAiTest {
     @DisplayName("完整对局能走到终局")
     void fullGameTerminates() {
         int winner = playOne(new Mover[] {
-                (state, seat) -> AiPlayer.choose(game, state, seat, Difficulty.EASY, new Random(7)),
-                (state, seat) -> AiPlayer.choose(game, state, seat, Difficulty.EASY, new Random(8))
+                (state, seat) -> AiPlayer.choose(game, state, seat, Difficulty.BEGINNER, new Random(7)),
+                (state, seat) -> AiPlayer.choose(game, state, seat, Difficulty.BEGINNER, new Random(8))
         }, 2, 1L);
         assertTrue(winner >= 0 || winner == -1);
     }

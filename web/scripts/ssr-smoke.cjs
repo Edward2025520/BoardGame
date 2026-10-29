@@ -51,7 +51,7 @@ const { Lobby } = require('../src/pages/Lobby.tsx');
 check(
   '大厅',
   renderToStaticMarkup(React.createElement(MemoryRouter, null, React.createElement(Lobby))),
-  ['桌游合集', '人数', '4 人', '你 + 3 个 AI', 'AI 难度', '正在读取游戏列表'],
+  ['桌游合集', '人数', '4 人', '你 + 3 个 AI', 'AI 难度', '一档 · 入门', '七档 · 地狱', '正在读取游戏列表'],
 );
 
 const { SplendorBoard } = require('../src/games/splendor/SplendorBoard.tsx');

@@ -84,8 +84,8 @@ class SplendorAiTest {
     @DisplayName("一次完整对局能从开局走到终局")
     void fullGameReachesTerminal() {
         int winner = playOne(new AiPlayerFn[] {
-                (state, seat) -> AiPlayer.choose(game, state, seat, Difficulty.EASY, new Random(7)),
-                (state, seat) -> AiPlayer.choose(game, state, seat, Difficulty.EASY, new Random(8))
+                (state, seat) -> AiPlayer.choose(game, state, seat, Difficulty.BEGINNER, new Random(7)),
+                (state, seat) -> AiPlayer.choose(game, state, seat, Difficulty.BEGINNER, new Random(8))
         }, 2, 1L);
         assertTrue(winner >= 0);
     }

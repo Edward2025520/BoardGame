@@ -54,4 +54,12 @@ public interface GameDefinition<S, A extends Action> {
     default double heuristic(S state, int seat) {
         return 0d;
     }
+
+    /**
+     * MCTS 的 rollout 候选收窄钩子：默认原样返回（均匀随机）。
+     * 游戏可以返回一个更小的候选集，让模拟更接近“会玩的人”。
+     */
+    default List<A> rolloutActions(S state, List<A> legal, int seat, Random rng) {
+        return legal;
+    }
 }

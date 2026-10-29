@@ -95,6 +95,7 @@ public class SessionService {
                     .filter(candidate -> candidate.key().equals(request.actionKey()))
                     .findFirst()
                     .orElseThrow(() -> ApiException.badRequest("非法动作: " + request.actionKey()));
+            session.checkpoint(action);
             session.apply(action, session.describe(action));
         } finally {
             session.lock().unlock();
@@ -103,6 +104,47 @@ public class SessionService {
         Dto.SessionDto dto = snapshot(session);
         hub.broadcast(sessionId, "state", dto);
         aiTurns.maybeStart(session);
+        return dto;
+    }
+
+    public Dto.SessionDto changeDifficulty(String sessionId, String raw) {
+        GameSession session = require(sessionId);
+        Difficulty difficulty = Difficulty.parse(raw);
+        session.lock().lock();
+        try {
+            if (session.finished()) {
+                throw ApiException.conflict("对局已结束");
+            }
+            session.setDifficulty(difficulty);
+        } finally {
+            session.lock().unlock();
+        }
+        Dto.SessionDto dto = snapshot(session);
+        hub.broadcast(sessionId, "state", dto);
+        return dto;
+    }
+
+    public Dto.SessionDto undo(String sessionId) {
+        GameSession session = require(sessionId);
+        if (aiTurns.isThinking(sessionId)) {
+            throw ApiException.conflict("AI 正在思考，等它走完再悔棋");
+        }
+        session.lock().lock();
+        try {
+            if (session.finished()) {
+                throw ApiException.conflict("对局已结束，不能悔棋");
+            }
+            if (!session.isHumanSeat(session.currentSeat())) {
+                throw ApiException.conflict("现在不是你的回合");
+            }
+            if (!session.undo()) {
+                throw ApiException.conflict("没有可以悔的步骤");
+            }
+        } finally {
+            session.lock().unlock();
+        }
+        Dto.SessionDto dto = snapshot(session);
+        hub.broadcast(sessionId, "state", dto);
         return dto;
     }
 

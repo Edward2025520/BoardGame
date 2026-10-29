@@ -1,4 +1,11 @@
-export type Difficulty = 'EASY' | 'NORMAL' | 'HARD' | 'EXPERT';
+export type Difficulty =
+  | 'BEGINNER'
+  | 'CASUAL'
+  | 'ADVANCED'
+  | 'MEDIUM'
+  | 'HARD'
+  | 'MASTER'
+  | 'HELL';
 
 export interface GameSummary {
   id: string;
@@ -41,13 +48,38 @@ export interface SessionDto {
   phase: string;
   finished: boolean;
   difficulty: Difficulty;
+  difficultyLabel: string;
   humanSeats: number[];
   seats: SeatInfo[];
   aiThinking: boolean;
+  canUndo: boolean;
+  reviewable: boolean;
   boards: Record<string, unknown>;
   legalActions: ActionOption[];
   log: LogItem[];
   outcome: Outcome | null;
+}
+
+export interface HintResult {
+  actionKey: string;
+  label: string;
+}
+
+export interface ReviewItem {
+  index: number;
+  label: string;
+}
+
+export interface ReviewList {
+  total: number;
+  items: ReviewItem[];
+}
+
+export interface ReviewMove {
+  index: number;
+  chosenLabel: string;
+  bestLabel: string;
+  delta: number;
 }
 
 export const GEMS = ['white', 'blue', 'green', 'red', 'black', 'gold'] as const;

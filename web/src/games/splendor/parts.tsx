@@ -122,6 +122,7 @@ export function CardTile({
   seat,
   keys,
   disabled,
+  hinted,
   onBuy,
   onReserve,
 }: {
@@ -129,15 +130,19 @@ export function CardTile({
   seat: SplendorSeat;
   keys: Set<string>;
   disabled: boolean;
+  hinted?: boolean;
   onBuy: (card: SplendorCard, source: HTMLElement) => void;
   onReserve: (card: SplendorCard) => void;
 }) {
   const canBuy = keys.has(`buy:${card.code}`);
   const canReserve = keys.has(`reserve:${card.code}`);
   const shortfall = cardShortfall(card, seat);
+  const className = ['card', canBuy ? 'affordable' : '', hinted ? 'hinted' : '']
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <div className={canBuy ? 'card affordable' : 'card'}>
+    <div className={className}>
       <div className="card-art">
         <CardArt card={card} />
       </div>
@@ -169,6 +174,8 @@ export function CardRows({
   seat,
   keys,
   disabled,
+  hintedCodes,
+  hintedDeckTier,
   onBuy,
   onReserve,
   onDeckReserve,
@@ -177,6 +184,8 @@ export function CardRows({
   seat: SplendorSeat;
   keys: Set<string>;
   disabled: boolean;
+  hintedCodes?: Set<string>;
+  hintedDeckTier?: number | null;
   onBuy: (card: SplendorCard, source: HTMLElement) => void;
   onReserve: (card: SplendorCard) => void;
   onDeckReserve: (tier: number) => void;
@@ -187,7 +196,7 @@ export function CardRows({
         <div className="row" key={row.tier}>
           <button
             type="button"
-            className="deck"
+            className={hintedDeckTier === row.tier ? 'deck hinted' : 'deck'}
             disabled={disabled || !keys.has(`reserve:deck:${row.tier}`) || row.deckSize === 0}
             onClick={() => onDeckReserve(row.tier)}
             title="盲抽预留，拿一个黄金"
@@ -204,6 +213,7 @@ export function CardRows({
                 seat={seat}
                 keys={keys}
                 disabled={disabled}
+                hinted={hintedCodes?.has(card.code)}
                 onBuy={onBuy}
                 onReserve={onReserve}
               />
@@ -220,12 +230,14 @@ export function GemBank({
   goldBank,
   selected,
   selectable,
+  hintedGems,
   onSelect,
 }: {
   bank: number[];
   goldBank: number;
   selected: Gem[];
   selectable: boolean;
+  hintedGems?: Set<string>;
   onSelect: (gem: Gem) => void;
 }) {
   return (
@@ -233,11 +245,14 @@ export function GemBank({
       {GEMS.slice(0, 5).map((gem, index) => {
         const count = bank[index];
         const picked = selected.filter((pickedGem) => pickedGem === gem).length;
+        const hinted = hintedGems?.has(gem) ?? false;
         return (
           <button
             key={gem}
             type="button"
-            className={picked > 0 ? 'gem-button picked' : 'gem-button'}
+            className={['gem-button', picked > 0 ? 'picked' : '', hinted ? 'hinted' : '']
+              .filter(Boolean)
+              .join(' ')}
             disabled={!selectable || count === 0}
             onClick={() => onSelect(gem as Gem)}
             title={`${GEM_LABEL[gem as Gem]}宝石，银行剩 ${count}`}

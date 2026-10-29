@@ -8,6 +8,7 @@ export interface BoardProps {
   mySeat: number;
   actions: ActionOption[];
   log: LogItem[];
+  hintKey?: string | null;
   disabled: boolean;
   onAction: (key: string) => void;
 }

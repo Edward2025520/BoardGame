@@ -177,7 +177,13 @@ check(
     JSON.stringify({ placed: 0, overflow: 2, lineColor: 'red' }),
 );
 
-// 10. 音量设置
+// 10. 七档难度的显示名
+const { difficultyLabel, DIFFICULTY_OPTIONS } = require('../src/lib/difficulties.ts');
+check('七档数量正确', DIFFICULTY_OPTIONS.length === 7, DIFFICULTY_OPTIONS.length);
+check('七档显示名', difficultyLabel('HELL') === '七档 · 地狱', difficultyLabel('HELL'));
+check('未知难度回退原值', difficultyLabel('???') === '???', difficultyLabel('???'));
+
+// 11. 音量设置
 const { clampVolume, DEFAULT_VOLUME, loadVolume } = require('../src/lib/audio-settings.ts');
 check('音量默认 70', DEFAULT_VOLUME === 70, DEFAULT_VOLUME);
 check('音量钳制下限', clampVolume(-10) === 0, clampVolume(-10));

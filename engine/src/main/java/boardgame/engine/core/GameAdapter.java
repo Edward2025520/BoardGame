@@ -82,4 +82,8 @@ public final class GameAdapter {
     public double heuristic(Object state, int seat) {
         return definition.heuristic(state, seat);
     }
+
+    public List<Action> rolloutActions(Object state, List<Action> legal, int seat, Random rng) {
+        return (List<Action>) (List) definition.rolloutActions(state, legal, seat, rng);
+    }
 }

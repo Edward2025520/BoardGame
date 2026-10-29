@@ -2,20 +2,14 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createSession, listGames } from '../api/client';
 import type { Difficulty, GameSummary } from '../api/types';
-
-const DIFFICULTIES: { value: Difficulty; label: string; hint: string }[] = [
-  { value: 'EASY', label: '入门', hint: '会故意下错' },
-  { value: 'NORMAL', label: '普通', hint: '约 1 秒' },
-  { value: 'HARD', label: '困难', hint: '约 3 秒' },
-  { value: 'EXPERT', label: '地狱', hint: '约 6 秒' },
-];
+import { DIFFICULTY_OPTIONS } from '../lib/difficulties';
 
 const SEAT_COUNTS = [2, 3, 4];
 
 export function Lobby() {
   const navigate = useNavigate();
   const [games, setGames] = useState<GameSummary[]>([]);
-  const [difficulty, setDifficulty] = useState<Difficulty>('NORMAL');
+  const [difficulty, setDifficulty] = useState<Difficulty>('MEDIUM');
   const [seatCount, setSeatCount] = useState(2);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
@@ -69,7 +63,7 @@ export function Lobby() {
       <section className="difficulty">
         <span className="section-title">AI 难度</span>
         <div className="chips">
-          {DIFFICULTIES.map((item) => (
+          {DIFFICULTY_OPTIONS.map((item) => (
             <button
               key={item.value}
               type="button"

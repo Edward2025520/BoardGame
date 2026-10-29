@@ -1251,3 +1251,68 @@ img.art {
   padding: 6px 10px;
   font-size: 12px;
 }
+
+/* 教练、悔棋、复盘 */
+.difficulty-select {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.coach-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 8px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: rgba(216, 178, 60, 0.1);
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.coach-bar .ghost {
+  margin-left: auto;
+}
+
+.card.hinted .card-art {
+  box-shadow: 0 0 0 2px var(--accent), 0 0 18px rgba(216, 178, 60, 0.45);
+}
+
+.gem-button.hinted {
+  border-color: var(--accent);
+  background: rgba(216, 178, 60, 0.14);
+}
+
+.deck.hinted {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(216, 178, 60, 0.35);
+}
+
+.review-panel {
+  margin: 14px 0;
+  text-align: left;
+}
+
+.review-panel h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.review-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.review-list li > div:last-child {
+  color: var(--muted);
+}

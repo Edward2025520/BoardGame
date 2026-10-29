@@ -39,6 +39,9 @@ public final class SplendorDefinition implements GameDefinition<SplendorState, S
     private static final int RESERVE_LIMIT = 3;
     private static final int WIN_POINTS = 15;
     private static final int ROW_SIZE = 4;
+    /** 评测时可以用 -Dboardgame.rollout=false 关掉启发式 rollout 做对比。 */
+    private static final boolean ROLLOUT_POLICY =
+            !"false".equalsIgnoreCase(System.getProperty("boardgame.rollout", "true"));
 
     @Override
     public String id() {
@@ -545,6 +548,27 @@ public final class SplendorDefinition implements GameDefinition<SplendorState, S
             }
         }
         return map;
+    }
+
+    @Override
+    public List<SplendorAction> rolloutActions(SplendorState state, List<SplendorAction> legal, int seat,
+                                               Random rng) {
+        if (!ROLLOUT_POLICY || legal.size() <= 1 || rng.nextDouble() < 0.2) {
+            return legal;
+        }
+        List<SplendorAction> buys = new ArrayList<>();
+        for (SplendorAction action : legal) {
+            if (action instanceof BuyCard) {
+                buys.add(action);
+            }
+        }
+        if (buys.isEmpty()) {
+            return legal;
+        }
+        // 模拟时优先买高分卡，避免随机 rollout 把好局走废
+        buys.sort((left, right) -> Integer.compare(((BuyCard) right).card().points(),
+                ((BuyCard) left).card().points()));
+        return buys.size() > 3 ? List.copyOf(buys.subList(0, 3)) : List.copyOf(buys);
     }
 
     @Override

@@ -28,7 +28,7 @@ public final class AiPlayer {
             return actions.get(rng.nextInt(actions.size()));
         }
 
-        SearchStrategy strategy = difficulty == Difficulty.EASY
+        SearchStrategy strategy = difficulty.greedy()
                 ? new GreedySearch(game, rng)
                 : new MctsSearch(game, rng);
         Optional<Action> move = strategy.chooseMove(state, seat, SearchBudget.of(difficulty.timeMs()));

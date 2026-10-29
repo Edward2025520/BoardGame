@@ -10,6 +10,7 @@ interface Props {
   mySeat: number;
   actions: ActionOption[];
   log: LogItem[];
+  hintKey?: string | null;
   disabled: boolean;
   onAction: (key: string) => void;
 }
@@ -29,7 +30,7 @@ const GEM_LABEL: Record<string, string> = {
   gold: '金',
 };
 
-export function SplendorBoard({ view, mySeat, actions, log, disabled, onAction }: Props) {
+export function SplendorBoard({ view, mySeat, actions, log, hintKey, disabled, onAction }: Props) {
   const [selection, setSelection] = useState<Selection>(emptySelection);
   const [hint, setHint] = useState<string | null>(null);
   const [flight, setFlight] = useState<Flight | null>(null);
@@ -60,6 +61,34 @@ export function SplendorBoard({ view, mySeat, actions, log, disabled, onAction }
   opponents.forEach((opponent, index) => labelBySeat.set(opponent.seat, `AI ${index + 1}`));
   const labelFor = (seatNumber: number) =>
     seatNumber === mySeat ? '你' : (labelBySeat.get(seatNumber) ?? 'AI');
+
+  const hintedCodes = useMemo(() => {
+    if (!hintKey) {
+      return new Set<string>();
+    }
+    if (hintKey.startsWith('buy:')) {
+      return new Set([hintKey.slice(4)]);
+    }
+    if (hintKey.startsWith('reserve:') && !hintKey.startsWith('reserve:deck:')) {
+      return new Set([hintKey.slice(8)]);
+    }
+    return new Set<string>();
+  }, [hintKey]);
+
+  const hintedDeckTier = hintKey?.startsWith('reserve:deck:')
+    ? Number(hintKey.split(':')[2])
+    : null;
+
+  const hintedGems = useMemo(() => {
+    if (!hintKey) {
+      return new Set<string>();
+    }
+    const match = hintKey.match(/^(?:take|discard):(.+)$/);
+    if (!match) {
+      return new Set<string>();
+    }
+    return new Set(match[1].split(',').map((name) => name.trim().toLowerCase()));
+  }, [hintKey]);
 
   const toggleReserved = () => {
     const next = !revealReserved;
@@ -159,6 +188,8 @@ export function SplendorBoard({ view, mySeat, actions, log, disabled, onAction }
           seat={seat}
           keys={keys}
           disabled={disabled}
+          hintedCodes={hintedCodes}
+          hintedDeckTier={hintedDeckTier}
           onBuy={buy}
           onReserve={reserve}
           onDeckReserve={deckReserve}
@@ -169,6 +200,7 @@ export function SplendorBoard({ view, mySeat, actions, log, disabled, onAction }
           goldBank={view.goldBank}
           selected={selection.gems}
           selectable={!disabled && !discarding && !choosingNoble}
+          hintedGems={hintedGems}
           onSelect={clickGem}
         />
 

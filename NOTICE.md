@@ -25,6 +25,9 @@
 - `tools/art-index.json` 中的序号顺序参考 [zhefu3/shanzhai-splendor](https://github.com/zhefu3/shanzhai-splendor)
   的 `src/engine/cards.ts`，仅用于把 `c0..c89` / `n0..n9` 映射到本项目的标准文件名。
 - 上述使用都只涉及规则参数与文件名映射这类事实数据，不包含对方的源代码、文案或美术资源。
+- 音效的合成配方（波形、音高、包络）参考 [Edward2025520/shanzhai-splendor](https://github.com/Edward2025520/shanzhai-splendor)
+  的 `src/ui/sound.ts`（MIT），本项目在其基础上扩展了事件数量并接入音量控制。
+- 七档难度的档位名称与预算梯度同样参考该项目。
 
 ## 代码
 
