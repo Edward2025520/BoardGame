@@ -683,20 +683,21 @@ img.art {
 
 .my-reserved {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   margin-left: auto;
+  align-items: flex-start;
 }
 
 .reserved-card {
-  width: 64px;
+  width: 110px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .buy-reserved {
-  font-size: 11px;
-  padding: 2px 0;
+  font-size: 12px;
+  padding: 3px 0;
   border-radius: 6px;
   border: 1px solid var(--line);
   background: var(--panel-2);
@@ -710,7 +711,7 @@ img.art {
 }
 
 .reserved-status {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -821,6 +822,10 @@ img.art {
 
   .my-reserved {
     margin-left: 0;
+  }
+
+  .reserved-card {
+    width: 84px;
   }
 
   .fly-card {
