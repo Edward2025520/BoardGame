@@ -119,6 +119,7 @@ export interface SplendorSeat {
   bonuses: number[];
   reservedCount: number;
   reserved: SplendorCard[];
+  purchased: SplendorCard[];
   current: boolean;
 }
 

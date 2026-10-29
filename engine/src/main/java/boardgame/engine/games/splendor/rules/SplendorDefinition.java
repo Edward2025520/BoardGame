@@ -109,7 +109,7 @@ public final class SplendorDefinition implements GameDefinition<SplendorState, S
                 new int[players][Gem.values().length],
                 new int[players], new int[players],
                 bank, rows, decks, emptyReserved(players),
-                noblePool.subList(0, players + 1), false, -1);
+                noblePool.subList(0, players + 1), false, -1, SplendorState.emptyPurchased(players));
     }
 
     private static List<List<Card>> emptyReserved(int players) {
@@ -237,7 +237,8 @@ public final class SplendorDefinition implements GameDefinition<SplendorState, S
             case Pass ignored -> noSeatCanAct(state)
                     ? new SplendorState(state.playerCount(), actor, SplendorPhase.OVER, state.tokens(),
                             state.bonuses(), state.points(), state.cards(), state.bank(), state.rows(),
-                            state.decks(), state.reserved(), state.nobles(), true, actor)
+                            state.decks(), state.reserved(), state.nobles(), true, actor,
+                            state.purchased())
                     : advance(state, actor, state.finalRound(), state.finalRoundTrigger());
         };
     }
@@ -248,7 +249,7 @@ public final class SplendorDefinition implements GameDefinition<SplendorState, S
             SplendorState probe = new SplendorState(state.playerCount(), seat, SplendorPhase.PLAY,
                     state.tokens(), state.bonuses(), state.points(), state.cards(), state.bank(),
                     state.rows(), state.decks(), state.reserved(), state.nobles(),
-                    state.finalRound(), state.finalRoundTrigger());
+                    state.finalRound(), state.finalRoundTrigger(), state.purchased());
             List<SplendorAction> actions = playActions(probe);
             if (actions.size() > 1 || !(actions.get(0) instanceof Pass)) {
                 return false;
@@ -275,7 +276,7 @@ public final class SplendorDefinition implements GameDefinition<SplendorState, S
         SplendorPhase phase = total > HAND_LIMIT ? SplendorPhase.DISCARD : SplendorPhase.PLAY;
         return new SplendorState(state.playerCount(), seat, phase, tokens, state.bonuses(),
                 state.points(), state.cards(), bank, state.rows(), state.decks(), state.reserved(),
-                state.nobles(), state.finalRound(), state.finalRoundTrigger());
+                state.nobles(), state.finalRound(), state.finalRoundTrigger(), state.purchased());
     }
 
     private SplendorState discardGems(SplendorState state, DiscardGems action) {
@@ -290,7 +291,7 @@ public final class SplendorDefinition implements GameDefinition<SplendorState, S
         SplendorState discarded = new SplendorState(state.playerCount(), seat, SplendorPhase.PLAY,
                 tokens, state.bonuses(), state.points(), state.cards(), state.bank(), state.rows(),
                 state.decks(), state.reserved(), state.nobles(), state.finalRound(),
-                state.finalRoundTrigger());
+                state.finalRoundTrigger(), state.purchased());
         return settle(discarded, seat);
     }
 
@@ -335,7 +336,7 @@ public final class SplendorDefinition implements GameDefinition<SplendorState, S
 
         SplendorState reservedState = new SplendorState(state.playerCount(), seat, SplendorPhase.PLAY,
                 tokens, state.bonuses(), state.points(), state.cards(), bank, rows, decks, reserved,
-                state.nobles(), state.finalRound(), state.finalRoundTrigger());
+                state.nobles(), state.finalRound(), state.finalRoundTrigger(), state.purchased());
         return settle(reservedState, seat);
     }
 
@@ -367,6 +368,11 @@ public final class SplendorDefinition implements GameDefinition<SplendorState, S
         points[seat] += card.points();
         cards[seat]++;
 
+        List<List<Card>> purchased = copyRows(state.purchased());
+        List<Card> ownCards = new ArrayList<>(purchased.get(seat));
+        ownCards.add(card);
+        purchased.set(seat, ownCards);
+
         List<List<Card>> rows = copyRows(state.rows());
         List<List<Card>> decks = copyRows(state.decks());
         List<List<Card>> reserved = copyRows(state.reserved());
@@ -387,7 +393,7 @@ public final class SplendorDefinition implements GameDefinition<SplendorState, S
 
         SplendorState bought = new SplendorState(state.playerCount(), seat, SplendorPhase.PLAY,
                 tokens, bonuses, points, cards, bank, rows, decks, reserved, state.nobles(),
-                state.finalRound(), state.finalRoundTrigger());
+                state.finalRound(), state.finalRoundTrigger(), purchased);
         return settle(bought, seat);
     }
 
@@ -403,7 +409,7 @@ public final class SplendorDefinition implements GameDefinition<SplendorState, S
             return new SplendorState(state.playerCount(), seat, SplendorPhase.CHOOSE_NOBLE,
                     state.tokens(), state.bonuses(), state.points(), state.cards(), state.bank(),
                     state.rows(), state.decks(), state.reserved(), state.nobles(),
-                    state.finalRound(), state.finalRoundTrigger());
+                    state.finalRound(), state.finalRoundTrigger(), state.purchased());
         }
         SplendorState awarded = qualifying.size() == 1
                 ? awardNoble(state, qualifying.get(0), seat)
@@ -420,7 +426,8 @@ public final class SplendorDefinition implements GameDefinition<SplendorState, S
         points[seat] += 3;
         return new SplendorState(state.playerCount(), seat, state.phase(), state.tokens(),
                 state.bonuses(), points, state.cards(), state.bank(), state.rows(), state.decks(),
-                state.reserved(), nobles, state.finalRound(), state.finalRoundTrigger());
+                state.reserved(), nobles, state.finalRound(), state.finalRoundTrigger(),
+                state.purchased());
     }
 
     private SplendorState advance(SplendorState state, int actor, boolean finalRound, int trigger) {
@@ -431,11 +438,13 @@ public final class SplendorDefinition implements GameDefinition<SplendorState, S
         if (closing && next == endSeat) {
             return new SplendorState(state.playerCount(), actor, SplendorPhase.OVER, state.tokens(),
                     state.bonuses(), state.points(), state.cards(), state.bank(), state.rows(),
-                    state.decks(), state.reserved(), state.nobles(), true, endSeat);
+                    state.decks(), state.reserved(), state.nobles(), true, endSeat,
+                    state.purchased());
         }
         return new SplendorState(state.playerCount(), next, SplendorPhase.PLAY, state.tokens(),
                 state.bonuses(), state.points(), state.cards(), state.bank(), state.rows(),
-                state.decks(), state.reserved(), state.nobles(), closing, endSeat);
+                state.decks(), state.reserved(), state.nobles(), closing, endSeat,
+                state.purchased());
     }
 
     @Override
@@ -510,9 +519,13 @@ public final class SplendorDefinition implements GameDefinition<SplendorState, S
             for (Card card : state.reserved().get(i)) {
                 reserved.add(cardView(card));
             }
+            List<CardView> purchased = new ArrayList<>();
+            for (Card card : state.purchased().get(i)) {
+                purchased.add(cardView(card));
+            }
             seats.add(new SeatView(i, state.points()[i], state.cards()[i],
                     state.tokens()[i].clone(), state.bonuses()[i].clone(),
-                    state.reserved().get(i).size(), reserved, i == state.currentSeat()));
+                    state.reserved().get(i).size(), reserved, purchased, i == state.currentSeat()));
         }
 
         List<RowView> rows = new ArrayList<>(3);

@@ -115,6 +115,10 @@ class SplendorRulesTest {
         assertEquals(0, next.tokensOf(0, Gem.GOLD));
         assertEquals(0, next.tokensOf(0, Gem.BLACK));
         assertTrue(next.rows().get(1).isEmpty());
+        assertEquals(1, next.purchased().get(0).size(), "买到的卡要进已购列表");
+        assertEquals(next.cards()[0], next.purchased().get(0).size(), "计数与列表长度一致");
+        assertEquals("3g2B3w", next.purchased().get(0).get(0).code());
+        assertTrue(next.purchased().get(1).isEmpty());
     }
 
     @Test
@@ -219,7 +223,8 @@ class SplendorRulesTest {
                 new int[] {15, 15}, new int[] {5, 3}, new int[Gem.values().length],
                 List.of(List.of(), List.of(), List.of()),
                 List.of(List.of(), List.of(), List.of()),
-                List.of(List.of(), List.of()), List.of(), true, 0);
+                List.of(List.of(), List.of()), List.of(), true, 0,
+                SplendorState.emptyPurchased(2));
         SplendorState over = game.apply(state, new SplendorAction.Pass());
 
         assertEquals(List.of(1), game.outcome(over).winners());
@@ -367,7 +372,8 @@ class SplendorRulesTest {
 
         SplendorState build() {
             return new SplendorState(players, seat, phase, tokens, bonuses, points, cards, bank,
-                    rows, decks, reserved, nobles, finalRound, trigger);
+                    rows, decks, reserved, nobles, finalRound, trigger,
+                    SplendorState.emptyPurchased(players));
         }
     }
 }

@@ -106,13 +106,63 @@ const seat = {
 const shortfall = cardShortfall(card, seat);
 check(
   '差额按颜色计算',
-  shortfallText(shortfall) === '缺 1绿 1黑',
+  shortfallText(shortfall) === '还缺 1绿 1黑',
   shortfallText(shortfall),
 );
 check('黄金不足时无法覆盖', goldCovers(shortfall, seat) === false);
 const rich = { ...seat, tokens: [0, 0, 1, 0, 1, 2] };
 check('黄金足够时覆盖', goldCovers(shortfall, rich) === true);
-check('免费卡显示免费', shortfallText(cardShortfall({ ...card, cost: {} }, seat)) === '免费');
+check('无成本时显示无需支付', shortfallText(cardShortfall({ ...card, cost: {} }, seat)) === '无需支付');
+
+// 7b. 支付明细：成本 - 折扣 = 实付
+const { paymentBreakdown, paymentSummary } = require('../src/games/splendor/selection.ts');
+
+// 卡面 cost：绿 3、黑 2
+const paySeat = { ...seat, tokens: [0, 0, 3, 0, 2, 0], bonuses: [0, 0, 0, 0, 0] };
+const fullPay = paymentBreakdown(card, paySeat);
+check(
+  '无折扣时实付等于成本',
+  fullPay.affordable && fullPay.payable.length === 2 &&
+    fullPay.payable[0].n === 3 && fullPay.payable[1].n === 2,
+  paymentSummary(card, paySeat),
+);
+
+const discountedSeat = { ...seat, tokens: [0, 0, 2, 0, 2, 0], bonuses: [0, 0, 1, 0, 0] };
+const discountedPay = paymentBreakdown(card, discountedSeat);
+check(
+  '折扣抵扣后只需补差额',
+  discountedPay.discount.length === 1 && discountedPay.discount[0].n === 1 &&
+    discountedPay.affordable && discountedPay.goldUsed === 0 &&
+    discountedPay.payable[0].n === 2,
+  JSON.stringify(discountedPay),
+);
+
+const goldSeat = { ...seat, tokens: [0, 0, 1, 0, 1, 2], bonuses: [0, 0, 1, 0, 0] };
+const goldPay = paymentBreakdown(card, goldSeat);
+check(
+  '宝石不足时用黄金补',
+  goldPay.affordable && goldPay.goldUsed === 2,
+  JSON.stringify(goldPay),
+);
+
+const shortSeat = { ...seat, tokens: [0, 0, 1, 0, 1, 1], bonuses: [0, 0, 1, 0, 0] };
+const shortPay = paymentBreakdown(card, shortSeat);
+check(
+  '黄金也不够时只差缺口',
+  !shortPay.affordable && shortPay.shortfall.reduce((sum, item) => sum + item.n, 0) === 1,
+  JSON.stringify(shortPay),
+);
+
+const overDiscount = { ...seat, tokens: [0, 0, 0, 0, 0, 0], bonuses: [0, 0, 5, 0, 5] };
+const freePay = paymentBreakdown(card, overDiscount);
+check(
+  '折扣超过成本时截断，实付为 0',
+  freePay.affordable && freePay.payable.length === 0 &&
+    freePay.discount[0].n === 3 && freePay.discount[1].n === 2,
+  JSON.stringify(freePay),
+);
+check('折扣全抵显示提示', paymentSummary(card, overDiscount) === '实付 0（折扣全抵）',
+  paymentSummary(card, overDiscount));
 
 // 8. 选中组合能命中后端动作
 const actions = [

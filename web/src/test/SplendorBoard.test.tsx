@@ -12,6 +12,7 @@ function seat(index: number, overrides: Partial<SplendorSeat> = {}): SplendorSea
     bonuses: [0, 0, 0, 0, 0],
     reservedCount: 0,
     reserved: [],
+    purchased: [],
     current: index === 0,
     ...overrides,
   };

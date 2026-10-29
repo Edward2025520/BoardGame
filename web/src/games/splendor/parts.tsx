@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   GEMS,
   GEM_COLOR,
@@ -9,7 +10,7 @@ import {
   type SplendorRow,
   type SplendorSeat,
 } from '../../api/types';
-import { cardShortfall, shortfallText } from './selection';
+import { paymentBreakdown, paymentSummary, type GemCount } from './selection';
 import { CardArt, GemCircle, NobleArt } from './art';
 
 export function Avatar({ label, mine }: { label: string; mine?: boolean }) {
@@ -117,6 +118,70 @@ export function NoblesRow({
   );
 }
 
+function CostPips({ items }: { items: GemCount[] }) {
+  return (
+    <span className="cost-pips">
+      {items.map((item) => (
+        <span
+          key={item.gem}
+          className="cost-pip"
+          style={{
+            background: GEM_COLOR[item.gem as Gem] ?? '#666',
+            color: item.gem === 'white' || item.gem === 'gold' ? '#2a2415' : '#fff',
+          }}
+        >
+          {item.n}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** 可买时三行：成本 / 折扣 / 实付；买不起只显示缺口。 */
+export function CardCostLines({ card, seat }: { card: SplendorCard; seat: SplendorSeat }) {
+  const breakdown = paymentBreakdown(card, seat);
+
+  if (!breakdown.affordable) {
+    return (
+      <div className="cost-lines">
+        <div className="cost-line shortfall">
+          <span className="cost-label">缺口</span>
+          <CostPips items={breakdown.shortfall} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="cost-lines">
+      <div className="cost-line">
+        <span className="cost-label">成本</span>
+        <CostPips items={breakdown.cost} />
+      </div>
+      <div className="cost-line discount">
+        <span className="cost-label">折扣</span>
+        {breakdown.discount.length > 0 ? (
+          <>
+            <span className="cost-minus">−</span>
+            <CostPips items={breakdown.discount} />
+          </>
+        ) : (
+          <span className="cost-none">无</span>
+        )}
+      </div>
+      <div className="cost-line payable">
+        <span className="cost-label">实付</span>
+        {breakdown.payable.length > 0 ? (
+          <CostPips items={breakdown.payable} />
+        ) : (
+          <span className="cost-none">0</span>
+        )}
+        {breakdown.payable.length === 0 && <span className="cost-note">折扣全抵</span>}
+      </div>
+    </div>
+  );
+}
+
 export function CardTile({
   card,
   seat,
@@ -136,7 +201,6 @@ export function CardTile({
 }) {
   const canBuy = keys.has(`buy:${card.code}`);
   const canReserve = keys.has(`reserve:${card.code}`);
-  const shortfall = cardShortfall(card, seat);
   const className = ['card', canBuy ? 'affordable' : '', hinted ? 'hinted' : '']
     .filter(Boolean)
     .join(' ');
@@ -164,7 +228,9 @@ export function CardTile({
           预留
         </button>
       </div>
-      <div className={canBuy ? 'card-status ok' : 'card-status'}>{shortfallText(shortfall)}</div>
+      <div className={canBuy ? 'card-status ok' : 'card-status'}>
+        <CardCostLines card={card} seat={seat} />
+      </div>
     </div>
   );
 }
@@ -288,6 +354,11 @@ export function MyPanel({
   selectedGems: Gem[];
   onDiscardClick: (gem: Gem) => void;
 }) {
+  const [showPurchased, setShowPurchased] = useState(false);
+  const bonusPips: GemCount[] = seat.bonuses
+    .map((count, index) => ({ gem: GEMS[index] as Gem, n: count }))
+    .filter((item) => item.n > 0);
+
   return (
     <div className="my-panel">
       <div className="my-head">
@@ -296,6 +367,31 @@ export function MyPanel({
         <span className="my-points">{seat.points} 分</span>
         <span className="my-cards">{seat.cards} 张卡</span>
       </div>
+      <div className="my-discount">
+        <span className="cost-label">永久折扣</span>
+        {bonusPips.length > 0 ? <CostPips items={bonusPips} /> : <span className="cost-none">暂无</span>}
+        <button
+          type="button"
+          className="ghost tiny"
+          onClick={() => setShowPurchased((value) => !value)}
+        >
+          已购 {seat.purchased.length} 张 {showPurchased ? '▴' : '▾'}
+        </button>
+      </div>
+      {showPurchased && (
+        <div className="purchased-grid">
+          {seat.purchased.map((card, index) => (
+            <div
+              key={`${card.code}-${index}`}
+              className="purchased-card"
+              title={`${card.tier} 级 ${GEM_LABEL[card.bonus as Gem] ?? card.bonus}卡，提供 +1 折扣`}
+            >
+              <CardArt card={card} />
+            </div>
+          ))}
+          {seat.purchased.length === 0 && <span className="hint">还没有买卡</span>}
+        </div>
+      )}
       <div className="my-gems">
         {GEMS.slice(0, 5).map((gem, index) => {
           const picked = selectedGems.filter((pickedGem) => pickedGem === gem).length;
@@ -337,7 +433,7 @@ export function MyPanel({
       {seat.reserved.length > 0 && (
         <div className="my-reserved">
           {seat.reserved.map((card) => (
-            <div key={card.code} className="reserved-card">
+            <div key={card.code} className="reserved-card" title={paymentSummary(card, seat)}>
               <CardArt card={card} />
             </div>
           ))}

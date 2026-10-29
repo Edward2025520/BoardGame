@@ -27,6 +27,7 @@ public record SplendorView(
             int[] bonuses,
             int reservedCount,
             List<CardView> reserved,
+            List<CardView> purchased,
             boolean current) {
     }
 

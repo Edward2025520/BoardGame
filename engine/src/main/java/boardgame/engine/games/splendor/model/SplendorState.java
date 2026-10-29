@@ -22,7 +22,8 @@ public record SplendorState(
         List<List<Card>> reserved,
         List<Noble> nobles,
         boolean finalRound,
-        int finalRoundTrigger) {
+        int finalRoundTrigger,
+        List<List<Card>> purchased) {
 
     public SplendorState {
         tokens = deepCopy(tokens);
@@ -34,6 +35,15 @@ public record SplendorState(
         decks = copyRows(decks);
         reserved = copyRows(reserved);
         nobles = List.copyOf(nobles);
+        purchased = copyRows(purchased);
+    }
+
+    public static List<List<Card>> emptyPurchased(int players) {
+        List<List<Card>> purchased = new ArrayList<>(players);
+        for (int i = 0; i < players; i++) {
+            purchased.add(new ArrayList<>());
+        }
+        return purchased;
     }
 
     private static int[][] deepCopy(int[][] source) {
