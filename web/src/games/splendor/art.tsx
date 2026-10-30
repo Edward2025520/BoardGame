@@ -71,6 +71,45 @@ export function GemCircle({
   );
 }
 
+/** 切面宝石图标：用于信息卡、成本行、支付面板与银行。 */
+export function GemIcon({ gem, size = 22, dimmed = false }: { gem: string; size?: number; dimmed?: boolean }) {
+  const base = GEM_COLOR[gem as Gem] ?? '#888';
+  const light = GEM_LIGHT[gem] ?? '#ddd';
+  const edge = gem === 'white' || gem === 'gold' ? 'rgba(64,50,20,0.6)' : 'rgba(0,0,0,0.45)';
+
+  return (
+    <svg
+      className={dimmed ? 'gem-icon dimmed' : 'gem-icon'}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <polygon points="7,3.5 17,3.5 21,9.5 12,21.5 3,9.5" fill={base} stroke={edge} strokeWidth="1" />
+      <polygon points="7.5,4.5 16.5,4.5 19.5,9 4.5,9" fill={light} opacity="0.55" />
+      <polygon points="4.5,9 9,9 12,19" fill="#fff" opacity="0.16" />
+      <polygon points="15,9 19.5,9 12,19" fill="#000" opacity="0.22" />
+      <polygon points="9,9 15,9 12,19" fill="#fff" opacity="0.08" />
+    </svg>
+  );
+}
+
+/** 折扣图标：一张小卡牌，颜色代表它提供的折扣。 */
+export function DiscountIcon({ gem, size = 22 }: { gem: string; size?: number }) {
+  const base = GEM_COLOR[gem as Gem] ?? '#888';
+  const light = GEM_LIGHT[gem] ?? '#ddd';
+  const edge = gem === 'white' || gem === 'gold' ? 'rgba(64,50,20,0.6)' : 'rgba(0,0,0,0.45)';
+
+  return (
+    <svg className="discount-icon" width={size * 0.75} height={size} viewBox="0 0 18 24" aria-hidden="true">
+      <rect x="1" y="1" width="16" height="22" rx="2.5" fill={base} stroke={edge} strokeWidth="1" />
+      <rect x="2.5" y="2.5" width="13" height="19" rx="1.5" fill="none" stroke="rgba(255,255,255,0.28)" />
+      <polygon points="9,7 12,9.5 9,14 6,9.5" fill={light} opacity="0.85" />
+      <rect x="2.5" y="16" width="13" height="5.5" rx="1.5" fill="#000" opacity="0.18" />
+    </svg>
+  );
+}
+
 /** 自绘卡面：等级色边框、分数角标、宝石与费用。 */
 export function CardFace({ card }: { card: SplendorCard }) {
   const uid = safeId(useId());

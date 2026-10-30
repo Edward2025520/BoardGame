@@ -139,7 +139,8 @@ check('四人牌桌', boardHtml, [
 ]);
 checkOrder('三行牌 3→2→1', boardHtml, '3 级', '1 级');
 check('右栏是独立容器', boardHtml, ['board-rail']);
-check('玩家信息卡', boardHtml, ['player-stats', '宝石', '折扣', 'stat-pip']);
+check('玩家信息卡', boardHtml, ['player-stats', '宝石', '折扣', 'gem-icon', 'discount-icon', 'icon-badge', '白折扣']);
+check('卡面成本用宝石图标', boardHtml, ['cost-pip', 'cost-pips']);
 
 const { PaymentDialog } = require('../src/games/splendor/parts.tsx');
 const dialogHtml = renderToStaticMarkup(
@@ -159,6 +160,8 @@ check('支付面板', dialogHtml, [
   '自动',
   '确认支付',
   '取消',
+  'payment-gem',
+  'gem-icon',
 ]);
 check('支付面板有加减按钮', dialogHtml, ['−', '+']);
 

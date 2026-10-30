@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   GEMS,
-  GEM_COLOR,
   GEM_LABEL,
   type Gem,
   type LogItem,
@@ -17,7 +16,7 @@ import {
   paymentSummary,
   type GemCount,
 } from './selection';
-import { CardArt, GemCircle, NobleArt } from './art';
+import { CardArt, DiscountIcon, GemIcon, NobleArt } from './art';
 
 export function Avatar({ label, mine }: { label: string; mine?: boolean }) {
   return <span className={mine ? 'avatar mine' : 'avatar'}>{label.slice(0, 1)}</span>;
@@ -117,12 +116,10 @@ function CostPips({ items }: { items: GemCount[] }) {
         <span
           key={item.gem}
           className="cost-pip"
-          style={{
-            background: GEM_COLOR[item.gem as Gem] ?? '#666',
-            color: item.gem === 'white' || item.gem === 'gold' ? '#2a2415' : '#fff',
-          }}
+          title={`${GEM_LABEL[item.gem as Gem] ?? item.gem} ${item.n}`}
         >
-          {item.n}
+          <GemIcon gem={item.gem} size={13} />
+          <b>{item.n}</b>
         </span>
       ))}
     </span>
@@ -315,18 +312,14 @@ export function GemBank({
             onClick={() => onSelect(gem as Gem)}
             title={`${GEM_LABEL[gem as Gem]}宝石，银行剩 ${count}`}
           >
-            <svg viewBox="0 0 40 40" className="gem-icon">
-              <GemCircle gem={gem} x={20} y={20} r={17} uid={`bank-${gem}`} />
-            </svg>
+            <GemIcon gem={gem} size={34} />
             <span className="gem-count">{count}</span>
             {picked > 0 && <span className="gem-picked">{picked}</span>}
           </button>
         );
       })}
       <div className="gem-button static" title={`黄金，银行剩 ${goldBank}`}>
-        <svg viewBox="0 0 40 40" className="gem-icon">
-          <GemCircle gem="gold" x={20} y={20} r={17} uid="bank-gold" />
-        </svg>
+        <GemIcon gem="gold" size={34} />
         <span className="gem-count">{goldBank}</span>
       </div>
     </div>
@@ -437,6 +430,22 @@ export function PlayerStats({
   onGemClick?: (gem: Gem) => void;
 }) {
   const interactive = Boolean(onGemClick);
+  const purchased = seat.purchased ?? [];
+
+  const discountTitle = (gem: Gem, index: number) => {
+    const cards = purchased.filter((card) => card.bonus === gem);
+    const tiers = [1, 2, 3]
+      .map((tier) => {
+        const count = cards.filter((card) => card.tier === tier).length;
+        return count > 0 ? `${tier} 级 ${count}` : '';
+      })
+      .filter(Boolean)
+      .join('、');
+    const points = cards.reduce((sum, card) => sum + card.points, 0);
+    const detail = cards.length > 0 ? `，已购 ${cards.length} 张（${tiers}，共 ${points} 分）` : '，还没买过';
+    return `${GEM_LABEL[gem]}折扣 ${seat.bonuses[index]}${detail}`;
+  };
+
   return (
     <div className="player-stats">
       <div className="stats-row">
@@ -444,27 +453,30 @@ export function PlayerStats({
         {GEMS.map((gem, index) => {
           const count = seat.tokens[index];
           const picked = selectedGems?.filter((pickedGem) => pickedGem === gem).length ?? 0;
-          const className = ['stat-pip', count === 0 ? 'empty' : '', picked > 0 ? 'picked' : ''].filter(Boolean).join(' ');
-          const style = {
-            background: GEM_COLOR[gem as Gem],
-            color: gem === 'white' || gem === 'gold' ? '#2a2415' : '#fff',
-          };
-          const title = discarding ? '点击弃掉这个宝石' : `${GEM_LABEL[gem as Gem]} ${count}`;
+          const className = ['stat-icon', count === 0 ? 'is-empty' : '', picked > 0 ? 'picked' : '']
+            .filter(Boolean)
+            .join(' ');
+          const title = discarding ? `点击弃掉${GEM_LABEL[gem as Gem]}` : `${GEM_LABEL[gem as Gem]}宝石 ${count}`;
+          const body = (
+            <>
+              <GemIcon gem={gem} size={22} dimmed={count === 0} />
+              <span className="icon-badge">{count}</span>
+            </>
+          );
           return interactive ? (
             <button
               key={gem}
               type="button"
               className={className}
-              style={style}
               disabled={!discarding || count === 0}
               onClick={() => onGemClick?.(gem as Gem)}
               title={title}
             >
-              {count}
+              {body}
             </button>
           ) : (
-            <span key={gem} className={className} style={style} title={title}>
-              {count}
+            <span key={gem} className={className} title={title}>
+              {body}
             </span>
           );
         })}
@@ -474,11 +486,11 @@ export function PlayerStats({
         {GEMS.slice(0, 5).map((gem, index) => (
           <span
             key={`bonus-${gem}`}
-            className={seat.bonuses[index] === 0 ? 'stat-pip bonus empty' : 'stat-pip bonus'}
-            style={{ background: GEM_COLOR[gem as Gem] }}
-            title={`${GEM_LABEL[gem as Gem]}折扣 ${seat.bonuses[index]}`}
+            className={seat.bonuses[index] === 0 ? 'stat-icon discount is-empty' : 'stat-icon discount'}
+            title={discountTitle(gem as Gem, index)}
           >
-            {seat.bonuses[index]}
+            <DiscountIcon gem={gem} size={22} />
+            <span className="icon-badge">{seat.bonuses[index]}</span>
           </span>
         ))}
       </div>
@@ -542,7 +554,7 @@ export function PaymentDialog({
             {options.map((option) => (
               <div className="payment-line" key={option.gem}>
                 <span className="payment-gem">
-                  <span className="dot" style={{ background: GEM_COLOR[option.gem] }} />
+                  <GemIcon gem={option.gem} size={14} />
                   {GEM_LABEL[option.gem]}
                 </span>
                 <span className="payment-need">需要 {option.need}</span>

@@ -531,8 +531,12 @@ img.art {
 }
 
 .gem-icon {
-  width: 40px;
-  height: 40px;
+  display: block;
+  flex: none;
+}
+
+.gem-icon.dimmed {
+  opacity: 0.55;
 }
 
 .gem-count {
@@ -1400,15 +1404,13 @@ img.art {
 }
 
 .cost-pip {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  font-size: 9px;
+  gap: 1px;
+  font-size: 10px;
   font-weight: 700;
-  border: 1px solid rgba(0, 0, 0, 0.35);
+  color: #e6e9f2;
+  font-variant-numeric: tabular-nums;
 }
 
 .cost-minus {
@@ -1471,37 +1473,55 @@ img.art {
   color: var(--muted);
 }
 
-.stat-pip {
-  min-width: 20px;
-  height: 20px;
-  padding: 0 4px;
+.stat-icon {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
-  border: 1px solid rgba(0, 0, 0, 0.45);
-  font-size: 11px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: #fff;
+  padding: 1px;
+  border: 0;
+  background: none;
+  color: inherit;
   cursor: default;
 }
 
-.stat-pip.empty {
-  opacity: 0.28;
+button.stat-icon:not(:disabled) {
+  cursor: pointer;
 }
 
-.stat-pip.bonus {
-  border-radius: 6px;
+.stat-icon.is-empty {
+  opacity: 0.38;
 }
 
-.stat-pip.picked {
+.stat-icon.picked {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
+  border-radius: 4px;
 }
 
-button.stat-pip:not(:disabled) {
-  cursor: pointer;
+.icon-badge {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  min-width: 12px;
+  height: 12px;
+  padding: 0 2px;
+  border-radius: 6px;
+  background: rgba(8, 11, 18, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.discount-icon {
+  display: block;
+  flex: none;
 }
 
 .my-actions {
@@ -1576,11 +1596,8 @@ button.stat-pip:not(:disabled) {
   gap: 5px;
 }
 
-.payment-gem .dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.45);
+.payment-gem .gem-icon {
+  flex: none;
 }
 
 .payment-need,
@@ -1647,5 +1664,15 @@ button.stat-pip:not(:disabled) {
 
   .payment-art {
     display: none;
+  }
+
+  .stat-icon .gem-icon,
+  .stat-icon .discount-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .icon-badge {
+    font-size: 8px;
   }
 }
