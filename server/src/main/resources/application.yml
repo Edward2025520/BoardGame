@@ -1,6 +1,13 @@
 server:
   port: 8080
 
+spring:
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          no-store: true
+
 boardgame:
   session:
     idle-timeout-minutes: 30
