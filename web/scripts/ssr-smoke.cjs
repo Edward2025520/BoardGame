@@ -130,7 +130,6 @@ check('四人牌桌', boardHtml, [
   '成本',
   '折扣',
   '实付',
-  '永久折扣',
   '已购 0 张',
   'buy-reserved',
   '实付 4绿',
@@ -140,6 +139,28 @@ check('四人牌桌', boardHtml, [
 ]);
 checkOrder('三行牌 3→2→1', boardHtml, '3 级', '1 级');
 check('右栏是独立容器', boardHtml, ['board-rail']);
+check('玩家信息卡', boardHtml, ['player-stats', '宝石', '折扣', 'stat-pip']);
+
+const { PaymentDialog } = require('../src/games/splendor/parts.tsx');
+const dialogHtml = renderToStaticMarkup(
+  React.createElement(PaymentDialog, {
+    card: reservedAffordable,
+    seat: { ...view.seats[0], tokens: [0, 0, 2, 0, 0, 1] },
+    onConfirm: () => undefined,
+    onCancel: () => undefined,
+  }),
+);
+check('支付面板', dialogHtml, [
+  '支付 1 级 绿 卡',
+  '需要 4',
+  '宝石 2',
+  '黄金',
+  '黄金 2 / 1',
+  '自动',
+  '确认支付',
+  '取消',
+]);
+check('支付面板有加减按钮', dialogHtml, ['−', '+']);
 
 // 花砖物语
 const { AzulBoard } = require('../src/games/azul/AzulBoard.tsx');

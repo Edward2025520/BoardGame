@@ -14,7 +14,7 @@ public final class Dto {
                                        String difficulty, Long seed) {
     }
 
-    public record ActionRequest(String actionKey, Integer expectedVersion) {
+    public record ActionRequest(String actionKey, Integer expectedVersion, List<Integer> payment) {
     }
 
     public record ActionOption(String key, String label) {

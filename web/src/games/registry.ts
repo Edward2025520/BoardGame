@@ -10,7 +10,7 @@ export interface BoardProps {
   log: LogItem[];
   hintKey?: string | null;
   disabled: boolean;
-  onAction: (key: string) => void;
+  onAction: (key: string, payment?: number[]) => void;
 }
 
 /**

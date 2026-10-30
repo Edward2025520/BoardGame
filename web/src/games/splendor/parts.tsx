@@ -10,7 +10,13 @@ import {
   type SplendorRow,
   type SplendorSeat,
 } from '../../api/types';
-import { paymentBreakdown, paymentSummary, type GemCount } from './selection';
+import {
+  autoPayment,
+  paymentBreakdown,
+  paymentOptions,
+  paymentSummary,
+  type GemCount,
+} from './selection';
 import { CardArt, GemCircle, NobleArt } from './art';
 
 export function Avatar({ label, mine }: { label: string; mine?: boolean }) {
@@ -32,25 +38,11 @@ export function OpponentStrip({
         <Avatar label={label} />
         <span className="opponent-name">{label}</span>
         <strong>{seat.points} 分</strong>
+        <span className="opponent-meta">
+          {seat.cards} 卡 · 留 {seat.reservedCount}/3
+        </span>
       </div>
-      <div className="opponent-gems">
-        {GEMS.slice(0, 5).map((gem, gemIndex) => (
-          <span key={gem} className="pip" style={{ background: GEM_COLOR[gem as Gem] }}>
-            {seat.tokens[gemIndex] > 0 ? seat.tokens[gemIndex] : ''}
-          </span>
-        ))}
-        <span className="pip gold">{seat.tokens[5] > 0 ? seat.tokens[5] : ''}</span>
-        {seat.bonuses.map((count, gemIndex) =>
-          count > 0 ? (
-            <span key={`bonus-${gemIndex}`} className="bonus-chip">
-              {GEM_LABEL[GEMS[gemIndex] as Gem]}
-              {count}
-            </span>
-          ) : null,
-        )}
-        <span className="bonus-chip">留 {seat.reservedCount}/3</span>
-        <span className="bonus-chip">{seat.cards} 卡</span>
-      </div>
+      <PlayerStats seat={seat} />
       {showReserved && seat.reserved.length > 0 && (
         <div className="opponent-reserved">
           {seat.reserved.map((card) => (
@@ -363,9 +355,6 @@ export function MyPanel({
   onBuy: (card: SplendorCard, source: HTMLElement) => void;
 }) {
   const [showPurchased, setShowPurchased] = useState(false);
-  const bonusPips: GemCount[] = seat.bonuses
-    .map((count, index) => ({ gem: GEMS[index] as Gem, n: count }))
-    .filter((item) => item.n > 0);
 
   return (
     <div className="my-panel">
@@ -375,9 +364,13 @@ export function MyPanel({
         <span className="my-points">{seat.points} 分</span>
         <span className="my-cards">{seat.cards} 张卡</span>
       </div>
-      <div className="my-discount">
-        <span className="cost-label">永久折扣</span>
-        {bonusPips.length > 0 ? <CostPips items={bonusPips} /> : <span className="cost-none">暂无</span>}
+      <PlayerStats
+        seat={seat}
+        discarding={discarding}
+        selectedGems={selectedGems}
+        onGemClick={onDiscardClick}
+      />
+      <div className="my-actions">
         <button
           type="button"
           className="ghost tiny"
@@ -400,44 +393,6 @@ export function MyPanel({
           {seat.purchased.length === 0 && <span className="hint">还没有买卡</span>}
         </div>
       )}
-      <div className="my-gems">
-        {GEMS.slice(0, 5).map((gem, index) => {
-          const picked = selectedGems.filter((pickedGem) => pickedGem === gem).length;
-          return (
-            <button
-              key={gem}
-              type="button"
-              className={picked > 0 ? 'gem-token picked' : 'gem-token'}
-              disabled={!discarding || seat.tokens[index] === 0}
-              onClick={() => onDiscardClick(gem as Gem)}
-              title={discarding ? '点击弃掉这个宝石' : `${GEM_LABEL[gem as Gem]}宝石`}
-            >
-              <span className="dot" style={{ background: GEM_COLOR[gem as Gem] }} />
-              {seat.tokens[index]}
-            </button>
-          );
-        })}
-        <button
-          type="button"
-          className={selectedGems.includes('gold') ? 'gem-token gold picked' : 'gem-token gold'}
-          disabled={!discarding || seat.tokens[5] === 0}
-          onClick={() => onDiscardClick('gold')}
-          title={discarding ? '点击弃掉黄金' : '黄金'}
-        >
-          <span className="dot gold" />
-          {seat.tokens[5]}
-        </button>
-      </div>
-      <div className="my-bonuses">
-        {seat.bonuses.map((count, index) =>
-          count > 0 ? (
-            <span key={`my-bonus-${index}`} className="bonus-chip">
-              {GEM_LABEL[GEMS[index] as Gem]}
-              {count}
-            </span>
-          ) : null,
-        )}
-      </div>
       {seat.reserved.length > 0 && (
         <div className="my-reserved">
           {seat.reserved.map((card) => {
@@ -465,6 +420,169 @@ export function MyPanel({
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+/** 你与 AI 共用的一行宝石、一行永久折扣。 */
+export function PlayerStats({
+  seat,
+  discarding = false,
+  selectedGems,
+  onGemClick,
+}: {
+  seat: SplendorSeat;
+  discarding?: boolean;
+  selectedGems?: Gem[];
+  onGemClick?: (gem: Gem) => void;
+}) {
+  const interactive = Boolean(onGemClick);
+  return (
+    <div className="player-stats">
+      <div className="stats-row">
+        <span className="stats-label">宝石</span>
+        {GEMS.map((gem, index) => {
+          const count = seat.tokens[index];
+          const picked = selectedGems?.filter((pickedGem) => pickedGem === gem).length ?? 0;
+          const className = ['stat-pip', count === 0 ? 'empty' : '', picked > 0 ? 'picked' : ''].filter(Boolean).join(' ');
+          const style = {
+            background: GEM_COLOR[gem as Gem],
+            color: gem === 'white' || gem === 'gold' ? '#2a2415' : '#fff',
+          };
+          const title = discarding ? '点击弃掉这个宝石' : `${GEM_LABEL[gem as Gem]} ${count}`;
+          return interactive ? (
+            <button
+              key={gem}
+              type="button"
+              className={className}
+              style={style}
+              disabled={!discarding || count === 0}
+              onClick={() => onGemClick?.(gem as Gem)}
+              title={title}
+            >
+              {count}
+            </button>
+          ) : (
+            <span key={gem} className={className} style={style} title={title}>
+              {count}
+            </span>
+          );
+        })}
+      </div>
+      <div className="stats-row">
+        <span className="stats-label">折扣</span>
+        {GEMS.slice(0, 5).map((gem, index) => (
+          <span
+            key={`bonus-${gem}`}
+            className={seat.bonuses[index] === 0 ? 'stat-pip bonus empty' : 'stat-pip bonus'}
+            style={{ background: GEM_COLOR[gem as Gem] }}
+            title={`${GEM_LABEL[gem as Gem]}折扣 ${seat.bonuses[index]}`}
+          >
+            {seat.bonuses[index]}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** 买卡前的手动支付面板：把某几种颜色改成用黄金付。 */
+export function PaymentDialog({
+  card,
+  seat,
+  onConfirm,
+  onCancel,
+}: {
+  card: SplendorCard;
+  seat: SplendorSeat;
+  onConfirm: (payment: number[]) => void;
+  onCancel: () => void;
+}) {
+  const options = paymentOptions(card, seat);
+  const [plan, setPlan] = useState<number[]>(() => autoPayment(card, seat));
+  const gold = seat.tokens[5];
+  const goldUsed = plan.reduce((sum, count) => sum + count, 0);
+
+  const adjust = (index: number, delta: number) => {
+    const option = options.find((item) => item.index === index);
+    if (!option) {
+      return;
+    }
+    setPlan((previous) => {
+      const value = previous[index] + delta;
+      if (value < option.minGold || value > option.maxGold) {
+        return previous;
+      }
+      const total = previous.reduce((sum, count) => sum + count, 0);
+      if (delta > 0 && total + 1 > gold) {
+        return previous;
+      }
+      const next = [...previous];
+      next[index] = value;
+      return next;
+    });
+  };
+
+  return (
+    <div className="payment-mask">
+      <div className="payment-dialog" role="dialog" aria-modal="true">
+        <div className="payment-head">
+          <span>
+            支付 {card.tier} 级 {GEM_LABEL[card.bonus as Gem] ?? card.bonus} 卡
+          </span>
+          <button type="button" className="ghost tiny" onClick={onCancel}>
+            取消
+          </button>
+        </div>
+        <div className="payment-body">
+          <div className="payment-art">
+            <CardArt card={card} />
+          </div>
+          <div className="payment-lines">
+            {options.map((option) => (
+              <div className="payment-line" key={option.gem}>
+                <span className="payment-gem">
+                  <span className="dot" style={{ background: GEM_COLOR[option.gem] }} />
+                  {GEM_LABEL[option.gem]}
+                </span>
+                <span className="payment-need">需要 {option.need}</span>
+                <span className="payment-tokens">宝石 {option.tokens}</span>
+                <span className="payment-gold">
+                  <span className="payment-gold-label">黄金</span>
+                  <button
+                    type="button"
+                    className="stepper"
+                    disabled={plan[option.index] <= option.minGold}
+                    onClick={() => adjust(option.index, -1)}
+                  >
+                    −
+                  </button>
+                  <b>{plan[option.index]}</b>
+                  <button
+                    type="button"
+                    className="stepper"
+                    disabled={plan[option.index] >= option.maxGold || goldUsed >= gold}
+                    onClick={() => adjust(option.index, 1)}
+                  >
+                    +
+                  </button>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="payment-foot">
+          <span className="payment-total">
+            黄金 {goldUsed} / {gold}
+          </span>
+          <button type="button" className="ghost" onClick={() => setPlan(autoPayment(card, seat))}>
+            自动
+          </button>
+          <button type="button" className="primary" onClick={() => onConfirm(plan)}>
+            确认支付
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

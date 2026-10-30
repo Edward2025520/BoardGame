@@ -164,6 +164,31 @@ check(
 check('折扣全抵显示提示', paymentSummary(card, overDiscount) === '实付 0（折扣全抵）',
   paymentSummary(card, overDiscount));
 
+// 7c. 支付面板：哪些颜色可以用黄金顶，最省黄金的方案是什么
+const { paymentOptions, autoPayment, needsPayment } = require('../src/games/splendor/selection.ts');
+const payCard = { code: 'x', tier: 1, points: 0, bonus: 'blue', cost: { green: 3, black: 2 } };
+const paySeat2 = { ...seat, tokens: [1, 0, 2, 0, 0, 2], bonuses: [0, 1, 0, 0, 0] };
+const options = paymentOptions(payCard, paySeat2);
+check(
+  '支付选项只列要付的颜色',
+  options.length === 2 && options[0].gem === 'green' && options[1].gem === 'black',
+  options,
+);
+check(
+  '每色的黄金下限与上限',
+  JSON.stringify(options) ===
+    JSON.stringify([
+      { gem: 'green', index: 2, need: 3, tokens: 2, minGold: 1, maxGold: 3 },
+      { gem: 'black', index: 4, need: 2, tokens: 0, minGold: 2, maxGold: 2 },
+    ]),
+  options,
+);
+check('自动方案用最少的黄金', JSON.stringify(autoPayment(payCard, paySeat2)) === '[0,0,1,0,2]',
+  autoPayment(payCard, paySeat2));
+check('没有黄金时不弹面板', needsPayment(payCard, { ...paySeat2, tokens: [1, 0, 2, 0, 0, 0] }) === false);
+check('有黄金且要付钱时弹面板', needsPayment(payCard, paySeat2) === true);
+check('折扣已抵完不弹面板', needsPayment(payCard, { ...paySeat2, bonuses: [0, 1, 3, 0, 2] }) === false);
+
 // 8. 选中组合能命中后端动作
 const actions = [
   { key: 'take:WHITE,BLUE,GREEN', label: '拿 白+蓝+绿' },

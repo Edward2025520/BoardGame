@@ -1,5 +1,8 @@
 package boardgame.server.api;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -132,6 +135,54 @@ class SessionApiTest {
     }
 
     @Test
+    @DisplayName("带支付方案的买卡能指定用黄金抵扣，非法方案返回 400 且不改局面")
+    void paymentPlanOverridesGold() throws Exception {
+        JsonNode created = createSession(2, "[0]", "BEGINNER");
+        String sessionId = created.get("sessionId").asText();
+        JsonNode dto = created;
+        JsonNode buy = null;
+
+        for (int i = 0; i < 40 && buy == null; i++) {
+            dto = waitHumanTurn(sessionId);
+            if (dto.get("legalActions").isEmpty()) {
+                break;
+            }
+            for (JsonNode action : dto.get("legalActions")) {
+                if (action.get("key").asText().startsWith("buy:")) {
+                    buy = action;
+                    break;
+                }
+            }
+            if (buy != null) {
+                break;
+            }
+            dto = postAction(sessionId, nextSetupAction(dto), dto.get("version").asInt(), 202);
+        }
+
+        assertNotNull(buy, "40 手以内应该买得起至少一张卡");
+        String key = buy.get("key").asText();
+        int version = dto.get("version").asInt();
+        JsonNode seat = dto.get("boards").get("0").get("seats").get(0);
+        int goldBefore = seat.get("tokens").get(5).asInt();
+
+        postActionWithPayment(sessionId, key, version, new int[] {99, 0, 0, 0, 0}, 400);
+        JsonNode unchanged = getSession(sessionId);
+        assertEquals(version, unchanged.get("version").asInt(), "非法支付不能改动局面");
+        assertEquals(goldBefore, unaffectedSeat(unchanged).get("tokens").get(5).asInt());
+
+        int[] plan = paymentPlan(findCard(dto, key.substring("buy:".length())), seat);
+        int goldUsed = plan[0] + plan[1] + plan[2] + plan[3] + plan[4];
+        assertTrue(goldUsed > 0, "这手方案至少要用一个黄金");
+
+        JsonNode after = postActionWithPayment(sessionId, key, version, plan, 202);
+        assertEquals(version + 1, after.get("version").asInt());
+        assertEquals(goldBefore - goldUsed,
+                unaffectedSeat(after).get("tokens").get(5).asInt(), "用掉的黄金要扣掉");
+        assertTrue(after.get("log").get(after.get("log").size() - 1).get("text").asText().contains("黄金"),
+                "日志里应说明用了几颗黄金");
+    }
+
+    @Test
     @DisplayName("对局中可以把难度改成七档里的任意一档")
     void changeDifficultyMidGame() throws Exception {
         JsonNode created = createSession(2, "[0,1]", "MEDIUM");
@@ -237,5 +288,91 @@ class SessionApiTest {
                 .andExpect(status().isOk())
                 .andReturn();
         return mapper.readTree(result.getResponse().getContentAsString());
+    }
+
+    private JsonNode waitHumanTurn(String sessionId) throws Exception {
+        long deadline = System.currentTimeMillis() + 15000;
+        JsonNode dto = getSession(sessionId);
+        while (System.currentTimeMillis() < deadline
+                && (dto.get("currentSeat").asInt() != 0 || dto.get("legalActions").isEmpty())) {
+            Thread.sleep(50);
+            dto = getSession(sessionId);
+        }
+        return dto;
+    }
+
+    private String nextSetupAction(JsonNode dto) {
+        String reserve = null;
+        String take = null;
+        boolean needGold = dto.get("boards").get("0").get("seats").get(0).get("tokens").get(5).asInt() == 0;
+        for (JsonNode action : dto.get("legalActions")) {
+            String key = action.get("key").asText();
+            if (take == null && key.startsWith("take:")) {
+                take = key;
+            }
+            if (reserve == null && key.startsWith("reserve")) {
+                reserve = key;
+            }
+        }
+        if (needGold && reserve != null) {
+            return reserve;
+        }
+        return take != null ? take : dto.get("legalActions").get(0).get("key").asText();
+    }
+
+    private JsonNode unaffectedSeat(JsonNode dto) {
+        return dto.get("boards").get("0").get("seats").get(0);
+    }
+
+    private JsonNode findCard(JsonNode dto, String code) {
+        JsonNode rows = unaffectedSeat(dto).get("reserved");
+        for (JsonNode card : rows) {
+            if (card.get("code").asText().equals(code)) {
+                return card;
+            }
+        }
+        for (JsonNode row : dto.get("boards").get("0").get("rows")) {
+            for (JsonNode card : row.get("cards")) {
+                if (card.get("code").asText().equals(code)) {
+                    return card;
+                }
+            }
+        }
+        throw new IllegalStateException("找不到卡面: " + code);
+    }
+
+    private int[] paymentPlan(JsonNode card, JsonNode seat) {
+        String[] ids = {"white", "blue", "green", "red", "black"};
+        int[] need = new int[5];
+        int[] plan = new int[5];
+        for (int i = 0; i < 5; i++) {
+            int cost = card.get("cost").path(ids[i]).asInt(0);
+            int bonus = seat.get("bonuses").get(i).asInt();
+            int tokens = seat.get("tokens").get(i).asInt();
+            need[i] = Math.max(0, cost - bonus);
+            plan[i] = Math.max(0, need[i] - tokens);
+        }
+        int spare = seat.get("tokens").get(5).asInt() - (plan[0] + plan[1] + plan[2] + plan[3] + plan[4]);
+        for (int i = 0; i < 5 && spare > 0; i++) {
+            int add = Math.min(spare, need[i] - plan[i]);
+            plan[i] += add;
+            spare -= add;
+        }
+        return plan;
+    }
+
+    private JsonNode postActionWithPayment(String sessionId, String actionKey, int expectedVersion,
+                                          int[] payment, int expectedStatus) throws Exception {
+        String body = mapper.writeValueAsString(Map.of(
+                "actionKey", actionKey,
+                "expectedVersion", expectedVersion,
+                "payment", payment));
+        MvcResult result = mvc.perform(post("/api/sessions/" + sessionId + "/actions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().is(expectedStatus))
+                .andReturn();
+        String content = result.getResponse().getContentAsString();
+        return content.isBlank() ? mapper.createObjectNode() : mapper.readTree(content);
     }
 }

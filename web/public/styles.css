@@ -1450,3 +1450,202 @@ img.art {
   width: 42px;
   flex: 0 0 auto;
 }
+
+/* 玩家信息卡：一行宝石、一行永久折扣 */
+.player-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stats-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.stats-label {
+  width: 28px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.stat-pip {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  cursor: default;
+}
+
+.stat-pip.empty {
+  opacity: 0.28;
+}
+
+.stat-pip.bonus {
+  border-radius: 6px;
+}
+
+.stat-pip.picked {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+button.stat-pip:not(:disabled) {
+  cursor: pointer;
+}
+
+.my-actions {
+  margin-left: auto;
+}
+
+.opponent-meta {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* 支付面板 */
+.payment-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(6, 9, 16, 0.62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.payment-dialog {
+  width: min(460px, 100%);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+
+.payment-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 600;
+}
+
+.payment-body {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.payment-art {
+  width: 92px;
+  flex: none;
+}
+
+.payment-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.payment-line {
+  display: grid;
+  grid-template-columns: 52px 1fr 1fr auto;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.payment-gem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.payment-gem .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.45);
+}
+
+.payment-need,
+.payment-tokens {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.payment-gold {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.payment-gold-label {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.payment-gold b {
+  min-width: 14px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.stepper {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: inherit;
+  cursor: pointer;
+}
+
+.stepper:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.payment-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+}
+
+.payment-total {
+  margin-right: auto;
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 520px) {
+  .payment-line {
+    grid-template-columns: 46px 1fr auto;
+  }
+
+  .payment-tokens {
+    display: none;
+  }
+
+  .payment-art {
+    display: none;
+  }
+}

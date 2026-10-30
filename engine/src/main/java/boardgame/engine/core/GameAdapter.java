@@ -86,4 +86,8 @@ public final class GameAdapter {
     public List<Action> rolloutActions(Object state, List<Action> legal, int seat, Random rng) {
         return (List<Action>) (List) definition.rolloutActions(state, legal, seat, rng);
     }
+
+    public Action withPayment(Action action, List<Integer> plan) {
+        return definition.withPayment(action, plan);
+    }
 }

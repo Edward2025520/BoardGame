@@ -38,12 +38,12 @@ export function useSession(sessionId: string) {
   }, [sessionId]);
 
   const act = useCallback(
-    async (actionKey: string) => {
+    async (actionKey: string, payment?: number[]) => {
       if (!session) {
         return;
       }
       try {
-        const next = await submitAction(session.sessionId, actionKey, session.version);
+        const next = await submitAction(session.sessionId, actionKey, session.version, payment);
         setSession(next);
         setError(null);
       } catch (cause) {

@@ -50,11 +50,12 @@ export async function submitAction(
   sessionId: string,
   actionKey: string,
   expectedVersion: number,
+  payment?: number[],
 ): Promise<SessionDto> {
   const response = await fetch(`/api/sessions/${sessionId}/actions`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ actionKey, expectedVersion }),
+    body: JSON.stringify(payment ? { actionKey, expectedVersion, payment } : { actionKey, expectedVersion }),
   });
   return parse<SessionDto>(response);
 }

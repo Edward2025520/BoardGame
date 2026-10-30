@@ -95,8 +95,16 @@ public class SessionService {
                     .filter(candidate -> candidate.key().equals(request.actionKey()))
                     .findFirst()
                     .orElseThrow(() -> ApiException.badRequest("非法动作: " + request.actionKey()));
+            if (request.payment() != null) {
+                action = session.game().withPayment(action, request.payment());
+            }
             session.checkpoint(action);
-            session.apply(action, session.describe(action));
+            try {
+                session.apply(action, session.describe(action));
+            } catch (IllegalStateException e) {
+                session.abortCheckpoint();
+                throw ApiException.badRequest("支付方案不合法：" + e.getMessage());
+            }
         } finally {
             session.lock().unlock();
         }

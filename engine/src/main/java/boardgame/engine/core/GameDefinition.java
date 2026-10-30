@@ -62,4 +62,12 @@ public interface GameDefinition<S, A extends Action> {
     default List<A> rolloutActions(S state, List<A> legal, int seat, Random rng) {
         return legal;
     }
+
+    /**
+     * 给动作附加“支付方案”之类的附加参数，默认忽略。
+     * 方案本身是否合法由 {@link #apply} 校验。
+     */
+    default A withPayment(A action, List<Integer> plan) {
+        return action;
+    }
 }

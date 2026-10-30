@@ -1,6 +1,7 @@
 package boardgame.engine.games.splendor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -139,6 +140,75 @@ class SplendorRulesTest {
         assertEquals(1, next.purchased().get(0).size());
         assertEquals(0, next.tokensOf(0, Gem.GREEN));
         assertEquals(1, next.bonusOf(0, Gem.BLACK));
+    }
+
+    @Test
+    @DisplayName("指定支付方案时用黄金顶替宝石，宝石留在手里")
+    void payWithGoldKeepsGems() {
+        Card card = card("2g2w");
+        SplendorState state = builder()
+                .row(0, card)
+                .tokens(0, Gem.GREEN, 2)
+                .tokens(0, Gem.WHITE, 2)
+                .tokens(0, Gem.GOLD, 2)
+                .build();
+
+        SplendorState next = game.apply(state,
+                new SplendorAction.BuyCard(card, List.of(2, 0, 0, 0, 0)));
+
+        assertEquals(1, next.cards()[0]);
+        assertEquals(0, next.tokensOf(0, Gem.GREEN), "绿用黄金付，绿宝石不动");
+        assertEquals(2, next.tokensOf(0, Gem.WHITE), "白仍用宝石付");
+        assertEquals(0, next.tokensOf(0, Gem.GOLD));
+        assertEquals(7, next.bankOf(Gem.WHITE), "用宝石付的部分回银行");
+        assertEquals(7, next.bankOf(Gem.GOLD), "黄金回银行");
+    }
+
+    @Test
+    @DisplayName("支付方案里某色黄金超过需求会被拒绝")
+    void rejectGoldOverNeed() {
+        Card card = card("2g2w");
+        SplendorState state = builder()
+                .row(0, card)
+                .tokens(0, Gem.GREEN, 2)
+                .tokens(0, Gem.WHITE, 2)
+                .tokens(0, Gem.GOLD, 3)
+                .build();
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> game.apply(state, new SplendorAction.BuyCard(card, List.of(3, 0, 0, 0, 0))));
+        assertTrue(error.getMessage().contains("支付方案不合法"), error.getMessage());
+    }
+
+    @Test
+    @DisplayName("支付方案用的黄金超过持有量会被拒绝")
+    void rejectGoldOverHeld() {
+        Card card = card("2g2w");
+        SplendorState state = builder()
+                .row(0, card)
+                .tokens(0, Gem.GREEN, 2)
+                .tokens(0, Gem.WHITE, 2)
+                .tokens(0, Gem.GOLD, 1)
+                .build();
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> game.apply(state, new SplendorAction.BuyCard(card, List.of(2, 2, 0, 0, 0))));
+        assertEquals("黄金不够", error.getMessage());
+    }
+
+    @Test
+    @DisplayName("支付方案把宝石改成黄金后，彩色宝石不足也会被拒绝")
+    void rejectMissingGem() {
+        Card card = card("2g2w");
+        SplendorState state = builder()
+                .row(0, card)
+                .tokens(0, Gem.GREEN, 1)
+                .tokens(0, Gem.WHITE, 2)
+                .build();
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> game.apply(state, new SplendorAction.BuyCard(card, List.of(0, 0, 0, 0, 0))));
+        assertTrue(error.getMessage().startsWith("宝石不够"), error.getMessage());
     }
 
     @Test

@@ -38,7 +38,15 @@ public sealed interface SplendorAction extends Action {
         }
     }
 
-    record BuyCard(Card card) implements SplendorAction {
+    record BuyCard(Card card, List<Integer> goldPlan) implements SplendorAction {
+
+        public BuyCard(Card card) {
+            this(card, List.of());
+        }
+
+        public BuyCard {
+            goldPlan = goldPlan == null ? List.of() : List.copyOf(goldPlan);
+        }
 
         @Override
         public String key() {
@@ -49,6 +57,14 @@ public sealed interface SplendorAction extends Action {
         public String label() {
             String suffix = card.points() > 0 ? "（" + card.points() + " 分）" : "";
             return "购买 " + card.tier() + " 级 " + card.bonus().label() + " 卡" + suffix;
+        }
+
+        public boolean hasGoldPlan() {
+            return !goldPlan.isEmpty();
+        }
+
+        public int goldFor(int colorIndex) {
+            return colorIndex >= 0 && colorIndex < goldPlan.size() ? goldPlan.get(colorIndex) : 0;
         }
     }
 

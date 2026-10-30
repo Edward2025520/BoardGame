@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ActionOption, Gem, LogItem, SplendorCard, SplendorView } from '../../api/types';
 import { play } from '../../lib/audio';
 import { CardArt } from './art';
-import { CardRows, GemBank, LogPanel, MyPanel, NoblesRow, OpponentStrip } from './parts';
-import { emptySelection, selectionAction, toggleGem, type Selection } from './selection';
+import { CardRows, GemBank, LogPanel, MyPanel, NoblesRow, OpponentStrip, PaymentDialog } from './parts';
+import { emptySelection, needsPayment, selectionAction, toggleGem, type Selection } from './selection';
 
 interface Props {
   view: SplendorView;
@@ -12,7 +12,12 @@ interface Props {
   log: LogItem[];
   hintKey?: string | null;
   disabled: boolean;
-  onAction: (key: string) => void;
+  onAction: (key: string, payment?: number[]) => void;
+}
+
+interface PendingBuy {
+  card: SplendorCard;
+  source: HTMLElement | null;
 }
 
 interface Flight {
@@ -34,6 +39,7 @@ export function SplendorBoard({ view, mySeat, actions, log, hintKey, disabled, o
   const [selection, setSelection] = useState<Selection>(emptySelection);
   const [hint, setHint] = useState<string | null>(null);
   const [flight, setFlight] = useState<Flight | null>(null);
+  const [pendingBuy, setPendingBuy] = useState<PendingBuy | null>(null);
   const [revealReserved, setRevealReserved] = useState(() => {
     try {
       return localStorage.getItem('boardgame.revealReserved') !== '0';
@@ -47,6 +53,7 @@ export function SplendorBoard({ view, mySeat, actions, log, hintKey, disabled, o
   useEffect(() => {
     setSelection(emptySelection);
     setHint(null);
+    setPendingBuy(null);
   }, [view]);
 
   const seat = view.seats[mySeat];
@@ -138,6 +145,10 @@ export function SplendorBoard({ view, mySeat, actions, log, hintKey, disabled, o
     if (disabled || !keys.has(key)) {
       return;
     }
+    if (needsPayment(card, seat)) {
+      setPendingBuy({ card, source: (source.closest('.card') as HTMLElement) ?? source });
+      return;
+    }
     play('buy');
     fly(card, (source.closest('.card') as HTMLElement) ?? source);
     onAction(key);
@@ -149,9 +160,26 @@ export function SplendorBoard({ view, mySeat, actions, log, hintKey, disabled, o
     if (disabled || !keys.has(key)) {
       return;
     }
+    if (needsPayment(card, seat)) {
+      setPendingBuy({ card, source: null });
+      return;
+    }
     play('buy');
     setSelection(emptySelection);
     onAction(key);
+  };
+
+  const confirmPayment = (payment: number[]) => {
+    const pending = pendingBuy;
+    if (!pending) {
+      return;
+    }
+    play('buy');
+    if (pending.source) {
+      fly(pending.card, pending.source);
+    }
+    setPendingBuy(null);
+    onAction(`buy:${pending.card.code}`, payment);
   };
 
   const reserve = (card: SplendorCard) => {
@@ -277,6 +305,15 @@ export function SplendorBoard({ view, mySeat, actions, log, hintKey, disabled, o
       </aside>
 
       {flight && <FlyingCard flight={flight} />}
+
+      {pendingBuy && (
+        <PaymentDialog
+          card={pendingBuy.card}
+          seat={seat}
+          onConfirm={confirmPayment}
+          onCancel={() => setPendingBuy(null)}
+        />
+      )}
     </div>
   );
 }

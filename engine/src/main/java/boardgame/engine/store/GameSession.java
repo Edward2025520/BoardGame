@@ -152,6 +152,14 @@ public final class GameSession {
         humanMoves.add(new HumanMove(state, action, humanMoves.size(), game.currentSeat(state)));
     }
 
+    /** apply 抛错时撤销 checkpoint，保持快照栈干净。 */
+    public void abortCheckpoint() {
+        snapshots.pollLast();
+        if (!humanMoves.isEmpty()) {
+            humanMoves.remove(humanMoves.size() - 1);
+        }
+    }
+
     public void apply(Action action, String description) {
         // 必须先记下行动者：apply 之后 currentSeat 已经轮到下家了
         int actor = game.currentSeat(state);

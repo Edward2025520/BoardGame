@@ -203,3 +203,48 @@ export function paymentSummary(card: SplendorCard, seat: SplendorSeat): string {
 export function seatOf(view: { seats: SplendorSeat[] }, seat: number): SplendorSeat {
   return view.seats[seat];
 }
+
+/** 一种颜色在支付面板里的一行：需要付多少、手里有多少、黄金承担多少。 */
+export interface PaymentOption {
+  gem: Gem;
+  index: number;
+  need: number;
+  tokens: number;
+  minGold: number;
+  maxGold: number;
+}
+
+/** 需要支付的颜色（成本减去永久折扣后仍大于 0）。 */
+export function paymentOptions(card: SplendorCard, seat: SplendorSeat): PaymentOption[] {
+  const options: PaymentOption[] = [];
+  GEMS.slice(0, 5).forEach((gem, index) => {
+    const need = Math.max(0, (card.cost[gem] ?? 0) - seat.bonuses[index]);
+    if (need <= 0) {
+      return;
+    }
+    const tokens = seat.tokens[index];
+    options.push({
+      gem: gem as Gem,
+      index,
+      need,
+      tokens,
+      minGold: Math.max(0, need - tokens),
+      maxGold: need,
+    });
+  });
+  return options;
+}
+
+/** 默认方案：彩色宝石优先，不够的才用黄金。 */
+export function autoPayment(card: SplendorCard, seat: SplendorSeat): number[] {
+  const plan = [0, 0, 0, 0, 0];
+  paymentOptions(card, seat).forEach((option) => {
+    plan[option.index] = option.minGold;
+  });
+  return plan;
+}
+
+/** 手里有黄金、且这张卡确实需要付彩色宝石时才弹支付面板。 */
+export function needsPayment(card: SplendorCard, seat: SplendorSeat): boolean {
+  return seat.tokens[5] > 0 && paymentOptions(card, seat).length > 0;
+}

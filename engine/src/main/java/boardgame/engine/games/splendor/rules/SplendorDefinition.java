@@ -353,16 +353,32 @@ public final class SplendorDefinition implements GameDefinition<SplendorState, S
         int[] cards = state.cards().clone();
         int[] bank = state.bank().clone();
 
-        int goldNeeded = 0;
+        List<Integer> plan = action.goldPlan();
+        int[] goldUse = new int[Gem.colors().length];
         for (Gem gem : Gem.colors()) {
-            int need = Math.max(0, card.costOf(gem) - bonuses[seat][gem.ordinal()]);
-            int paid = Math.min(need, tokens[seat][gem.ordinal()]);
-            tokens[seat][gem.ordinal()] -= paid;
-            bank[gem.ordinal()] += paid;
-            goldNeeded += need - paid;
+            int idx = gem.ordinal();
+            int need = Math.max(0, card.costOf(gem) - bonuses[seat][idx]);
+            int gold = plan.isEmpty() ? Math.max(0, need - tokens[seat][idx]) : action.goldFor(idx);
+            if (gold < 0 || gold > need) {
+                throw new IllegalStateException("支付方案不合法：" + gem.label() + " 的黄金数量超出范围");
+            }
+            int paid = need - gold;
+            if (paid > tokens[seat][idx]) {
+                throw new IllegalStateException("宝石不够：" + gem.label());
+            }
+            tokens[seat][idx] -= paid;
+            bank[idx] += paid;
+            goldUse[idx] = gold;
         }
-        tokens[seat][Gem.GOLD.ordinal()] -= goldNeeded;
-        bank[Gem.GOLD.ordinal()] += goldNeeded;
+        int totalGold = 0;
+        for (int gold : goldUse) {
+            totalGold += gold;
+        }
+        if (totalGold > tokens[seat][Gem.GOLD.ordinal()]) {
+            throw new IllegalStateException("黄金不够");
+        }
+        tokens[seat][Gem.GOLD.ordinal()] -= totalGold;
+        bank[Gem.GOLD.ordinal()] += totalGold;
 
         bonuses[seat][card.bonus().ordinal()]++;
         points[seat] += card.points();
@@ -492,6 +508,14 @@ public final class SplendorDefinition implements GameDefinition<SplendorState, S
     }
 
     @Override
+    public SplendorAction withPayment(SplendorAction action, List<Integer> plan) {
+        if (plan == null || plan.isEmpty() || !(action instanceof BuyCard buy)) {
+            return action;
+        }
+        return new BuyCard(buy.card(), plan);
+    }
+
+    @Override
     public String describe(SplendorState state, SplendorAction action) {
         return switch (action) {
             case TakeGems take -> "拿了 " + GemText.names(take.gems()) + " 宝石";
@@ -502,7 +526,12 @@ public final class SplendorDefinition implements GameDefinition<SplendorState, S
             case BuyCard buy -> {
                 Card card = buy.card();
                 String name = card.tier() + " 级 " + card.bonus().label() + " 卡";
-                yield card.points() > 0 ? "购买 " + name + "，+" + card.points() + " 分" : "购买 " + name;
+                String base = card.points() > 0 ? "购买 " + name + "，+" + card.points() + " 分" : "购买 " + name;
+                int gold = 0;
+                for (int use : buy.goldPlan()) {
+                    gold += use;
+                }
+                yield gold > 0 ? base + "，用 " + gold + " 黄金" : base;
             }
             case ChooseNoble choose -> "获得贵族 " + choose.noble().code() + "，+3 分";
             case Pass ignored -> "跳过";
